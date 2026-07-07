@@ -1,0 +1,31 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="44" y1="24" x2="468" y2="488" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08162F"/>
+      <stop offset="0.58" stop-color="#0D2550"/>
+      <stop offset="1" stop-color="#133F72"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(122 112) rotate(90) scale(154 202)">
+      <stop stop-color="#4AE4FF" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#4AE4FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+
+  <g transform="translate(75 71)">
+    <circle cx="181" cy="199" r="170" fill="#091126" stroke="#F5F9FF" stroke-opacity="0.16" stroke-width="8"/>
+    <path d="M181 199L181 29A170 170 0 0 1 301.21 78.79Z" fill="#4AE4FF"/>
+    <path d="M181 199L301.21 78.79A170 170 0 0 1 351 199Z" fill="#FFDF68"/>
+    <path d="M181 199L351 199A170 170 0 0 1 301.21 319.21Z" fill="#FF6F91"/>
+    <path d="M181 199L301.21 319.21A170 170 0 0 1 181 369Z" fill="#8E7CFF"/>
+    <path d="M181 199L181 369A170 170 0 0 1 60.79 319.21Z" fill="#00C2A8"/>
+    <path d="M181 199L60.79 319.21A170 170 0 0 1 11 199Z" fill="#5EE0B2"/>
+    <path d="M181 199L11 199A170 170 0 0 1 60.79 78.79Z" fill="#36A2FF"/>
+    <path d="M181 199L60.79 78.79A170 170 0 0 1 181 29Z" fill="#1B78D3"/>
+    <circle cx="181" cy="199" r="60" fill="#F3F8FF" fill-opacity="0.12" stroke="#F3F8FF" stroke-opacity="0.32" stroke-width="4"/>
+    <circle cx="181" cy="199" r="27" fill="#F3F8FF"/>
+    <path d="M181 3L203 42H159L181 3Z" fill="#F3F8FF"/>
+  </g>
+</svg>
