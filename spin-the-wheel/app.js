@@ -192,6 +192,9 @@ let activeModal = null;
 let activeCelebration = null;
 let currentWinnerEntryId = null;
 let templateCache = [];
+let templatesRendered = false;
+let themeOptionsRendered = false;
+let languageMenuRendered = false;
 let manualSpinPending = null;
 let csvImportRows = [];
 let recentWheels = [];
@@ -848,6 +851,10 @@ function renderSettingsModalTabs(activeTab = "general") {
 
 function openSettingsModal(initialTab = "general") {
   if (!dom.settingsModal) return;
+  if (!themeOptionsRendered) {
+    renderThemeOptions();
+    themeOptionsRendered = true;
+  }
   renderSettingsModalTabs(initialTab);
   openModal(dom.settingsModal);
 }
@@ -2493,6 +2500,10 @@ async function performFactoryReset() {
 function bindEvents() {
   if (dom.languageButton) {
     dom.languageButton.addEventListener("click", () => {
+      if (!languageMenuRendered) {
+        renderLanguageMenu();
+        languageMenuRendered = true;
+      }
       const isOpen = !dom.languageMenu.classList.contains("hidden");
       dom.languageMenu.classList.toggle("hidden", isOpen);
       dom.languageButton.setAttribute("aria-expanded", String(!isOpen));
@@ -2603,9 +2614,19 @@ function bindEvents() {
 
   dom.templateButton.addEventListener("click", () => {
     if (getState().settings.spinOnly) return;
+    if (!templatesRendered) {
+      renderTemplates();
+      templatesRendered = true;
+    }
     openModal(dom.templateModal);
   });
-  dom.emptyTemplateButton.addEventListener("click", () => openModal(dom.templateModal));
+  dom.emptyTemplateButton.addEventListener("click", () => {
+    if (!templatesRendered) {
+      renderTemplates();
+      templatesRendered = true;
+    }
+    openModal(dom.templateModal);
+  });
   dom.closeTemplateButton.addEventListener("click", closeModal);
 
   dom.importDataButton.addEventListener("click", () => dom.importDataFileInput.click());
@@ -3239,12 +3260,6 @@ async function registerServiceWorker() {
 async function bootstrap() {
   const initialLanguage = await initI18n();
   applyTranslations(document);
-  renderThemeOptions();
-  renderLanguageMenu();
-  renderTemplates();
-  syncHreflang();
-  recentWheels = loadRecentWheels();
-  renderRecentWheelsSelect();
 
   let decodedState = null;
   const sharePayload = readSharePayload();
@@ -3268,8 +3283,8 @@ async function bootstrap() {
   }
   // Older builds shipped with sample names (Noah, Olivia, ...) as the default
   // wheel; clear them from stored state so the app starts empty instead.
-  const legacySampleLabels = [...TEAM_PICKER_NAMES].sort().join(" ");
-  const storedLabels = initialState.entries.map((entry) => entry.label).sort().join(" ");
+  const legacySampleLabels = [...TEAM_PICKER_NAMES].sort().join(" ");
+  const storedLabels = initialState.entries.map((entry) => entry.label).sort().join(" ");
   if (!sharePayload && initialState.entries.length === TEAM_PICKER_NAMES.length && storedLabels === legacySampleLabels) {
     initialState.entries = [];
     stateManager.setState(initialState, { reason: "clear-sample-entries", skipHistory: true });
@@ -3317,6 +3332,8 @@ async function bootstrap() {
   bindEvents();
   setupFloatingSpinObserver();
   window.addEventListener("beforeunload", cleanupRuntimeResources, { once: true });
+  
+  // Render core UI immediately
   renderAll(getState());
   stateManager.on(STATE_EVENTS.change, (nextState) => {
     renderAll(nextState);
@@ -3328,7 +3345,14 @@ async function bootstrap() {
     }).catch(() => {});
   }
 
-  registerServiceWorker();
+  // Defer non-critical background tasks after initial paint
+  const deferTask = window.requestIdleCallback || ((cb) => setTimeout(cb, 800));
+  deferTask(() => {
+    syncHreflang();
+    recentWheels = loadRecentWheels();
+    renderRecentWheelsSelect();
+    setTimeout(registerServiceWorker, 1500);
+  });
 
   if (getState().settings.spinOnly) {
     showToast(t("spin_only_mode_loaded"));

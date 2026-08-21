@@ -9,7 +9,7 @@ async function loadPack(code) {
   if (packs[code]) return packs[code];
 
   try {
-    const response = await fetch(`/lang/${code}.json`, { cache: "no-store" });
+    const response = await fetch(`/lang/${code}.json`);
     if (!response.ok) throw new Error("Language pack unavailable");
     const payload = await response.json();
     packs[code] = payload;
@@ -23,22 +23,27 @@ function normalizeLanguageCode(rawCode) {
   return "vi";
 }
 
-export async function initI18n(defaultLang = "en") {
+export async function initI18n(defaultLang = "vi") {
   const stored = safeLocalStorageGet(STORAGE_KEYS.language);
   const fromUrl = new URL(window.location.href).searchParams.get("lang");
   const fromNavigator = normalizeLanguageCode(navigator.language);
   currentLang = normalizeLanguageCode(stored || fromUrl || fromNavigator || defaultLang);
 
   // Persist URL-sourced language so subsequent visits without ?lang keep the choice.
-  if (!stored && fromUrl && normalizeLanguageCode(fromUrl) !== "en") {
+  if (!stored && fromUrl && normalizeLanguageCode(fromUrl) !== "vi") {
     safeLocalStorageSet(STORAGE_KEYS.language, currentLang);
   }
 
-  fallbackPack = await loadPack("en");
-  packs.en = fallbackPack;
+  // Load active language pack first (critical path)
+  await loadPack(currentLang);
+  fallbackPack = packs[currentLang] || {};
 
-  if (currentLang !== "en") {
-    await loadPack(currentLang);
+  // Lazy-load fallback in the background without blocking boot
+  if (currentLang !== "en" && !packs.en) {
+    loadPack("en").then((pack) => {
+      fallbackPack = pack;
+      packs.en = pack;
+    }).catch(() => {});
   }
 
   return currentLang;
