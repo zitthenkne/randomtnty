@@ -1607,18 +1607,19 @@ function buildResultCardImageData() {
   ctx.fill();
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "700 48px Plus Jakarta Sans";
+  ctx.font = '700 48px "Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = "center";
   ctx.fillText(t("winner"), canvas.width / 2, 210);
-  ctx.font = "800 106px Outfit";
+  ctx.font = '800 102px "Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
   const winnerText = latest.label.length > 22 ? `${latest.label.slice(0, 22)}...` : latest.label;
   ctx.fillText(winnerText, canvas.width / 2, 430);
 
-  ctx.font = "500 34px Plus Jakarta Sans";
+  ctx.font = '500 34px "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.fillText(formatTimestamp(latest.timestamp, getCurrentLanguage()), canvas.width / 2, 560);
   ctx.fillStyle = "rgba(255,255,255,0.75)";
-  ctx.fillText("Spin the Wheel", canvas.width / 2, 1020);
+  ctx.font = '600 30px "Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
+  ctx.fillText("CLB Tình Nguyện Trường Y", canvas.width / 2, 1020);
 
   return canvas.toDataURL("image/png");
 }
@@ -3320,6 +3321,12 @@ async function bootstrap() {
   stateManager.on(STATE_EVENTS.change, (nextState) => {
     renderAll(nextState);
   });
+
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(() => {
+      wheelEngine.render();
+    }).catch(() => {});
+  }
 
   registerServiceWorker();
 

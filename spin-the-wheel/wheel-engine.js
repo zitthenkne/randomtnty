@@ -2,6 +2,7 @@ import { THEME_PRESETS } from "./themes.js";
 import { autoContrastColor, clamp, normalizeAngle } from "./utils.js";
 
 const TAU = Math.PI * 2;
+const FONT_WHEEL = '"Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
 function easeOutFriction(t) {
   return 1 - Math.pow(1 - t, 3.2);
@@ -378,7 +379,7 @@ export class WheelEngine {
     } else {
       ctx.save();
       ctx.fillStyle = "rgba(255,255,255,0.94)";
-      ctx.font = `700 ${Math.max(14, radius * 0.08)}px "Plus Jakarta Sans", sans-serif`;
+      ctx.font = `700 ${Math.max(14, radius * 0.08)}px ${FONT_WHEEL}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(`${this.segmentData.length} entries`, centerX, centerY + radius * 0.24);
@@ -542,13 +543,13 @@ function drawSegmentLabel(ctx, segment, settings, rotation, centerX, centerY, ra
   ctx.rotate(worldAngle + Math.PI / 2);
 
   while (fontSize > (simplified ? 9 : 11)) {
-    ctx.font = `700 ${fontSize}px "Plus Jakarta Sans", sans-serif`;
+    ctx.font = `700 ${fontSize}px ${FONT_WHEEL}`;
     if (ctx.measureText(label).width <= maxWidth) break;
     fontSize -= 1;
   }
 
   let renderLabel = label;
-  ctx.font = `700 ${fontSize}px "Plus Jakarta Sans", sans-serif`;
+  ctx.font = `700 ${fontSize}px ${FONT_WHEEL}`;
   if (ctx.measureText(renderLabel).width > maxWidth) {
     renderLabel = truncateToFit(ctx, renderLabel, maxWidth);
   }

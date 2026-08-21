@@ -45,29 +45,29 @@
 
   <g transform="translate(505 102)">
     <rect x="0" y="0" width="182" height="38" rx="19" fill="#F3F8FF" fill-opacity="0.1" stroke="#F3F8FF" stroke-opacity="0.14"/>
-    <text x="24" y="25" fill="#FFDF68" font-family="Outfit, 'Segoe UI', sans-serif" font-size="17" font-weight="800" letter-spacing="0.14em">FREE RANDOM PICKER</text>
+    <text x="24" y="25" fill="#FFDF68" font-family="Lexend, 'Segoe UI', sans-serif" font-size="17" font-weight="800" letter-spacing="0.14em">FREE RANDOM PICKER</text>
 
-    <text x="0" y="112" fill="#F3F8FF" font-family="Outfit, 'Segoe UI', sans-serif" font-size="70" font-weight="800">Spin the Wheel</text>
+    <text x="0" y="112" fill="#F3F8FF" font-family="Lexend, 'Segoe UI', sans-serif" font-size="70" font-weight="800">Spin the Wheel</text>
     <text x="0" y="168" fill="#B5C4E4" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="600">Fair spins for classrooms, raffles, giveaways, and teams.</text>
 
     <g transform="translate(0 222)">
       <rect x="0" y="0" width="166" height="92" rx="24" fill="#F3F8FF" fill-opacity="0.07" stroke="#F3F8FF" stroke-opacity="0.12"/>
-      <text x="24" y="34" fill="#4AE4FF" font-family="Outfit, 'Segoe UI', sans-serif" font-size="18" font-weight="800">PRIVATE</text>
+      <text x="24" y="34" fill="#4AE4FF" font-family="Lexend, 'Segoe UI', sans-serif" font-size="18" font-weight="800">PRIVATE</text>
       <text x="24" y="60" fill="#F3F8FF" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="600">Local-first</text>
       <text x="24" y="82" fill="#F3F8FF" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="600">storage</text>
 
       <rect x="186" y="0" width="196" height="92" rx="24" fill="#F3F8FF" fill-opacity="0.07" stroke="#F3F8FF" stroke-opacity="0.12"/>
-      <text x="210" y="34" fill="#FFDF68" font-family="Outfit, 'Segoe UI', sans-serif" font-size="18" font-weight="800">TRUSTED</text>
+      <text x="210" y="34" fill="#FFDF68" font-family="Lexend, 'Segoe UI', sans-serif" font-size="18" font-weight="800">TRUSTED</text>
       <text x="210" y="60" fill="#F3F8FF" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="600">Crypto-random</text>
       <text x="210" y="82" fill="#F3F8FF" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="600">results</text>
 
       <rect x="402" y="0" width="180" height="92" rx="24" fill="#F3F8FF" fill-opacity="0.07" stroke="#F3F8FF" stroke-opacity="0.12"/>
-      <text x="426" y="34" fill="#5EE0B2" font-family="Outfit, 'Segoe UI', sans-serif" font-size="18" font-weight="800">FAST</text>
+      <text x="426" y="34" fill="#5EE0B2" font-family="Lexend, 'Segoe UI', sans-serif" font-size="18" font-weight="800">FAST</text>
       <text x="426" y="60" fill="#F3F8FF" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="600">Offline and</text>
       <text x="426" y="82" fill="#F3F8FF" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="600">shareable</text>
     </g>
 
     <text x="0" y="390" fill="#B5C4E4" font-family="'Segoe UI', Arial, sans-serif" font-size="22" font-weight="600">Weighted entries • Templates • Winner history • Multi-language UI</text>
-    <text x="0" y="448" fill="#F3F8FF" font-family="Outfit, 'Segoe UI', sans-serif" font-size="30" font-weight="700">spin.alsatian.co</text>
+    <text x="0" y="448" fill="#F3F8FF" font-family="Lexend, 'Segoe UI', sans-serif" font-size="30" font-weight="700">spin.alsatian.co</text>
   </g>
 </svg>
