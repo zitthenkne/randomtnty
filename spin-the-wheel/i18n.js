@@ -1,18 +1,18 @@
 import { STORAGE_KEYS, safeLocalStorageGet, safeLocalStorageSet } from "./utils.js";
 
 const listeners = new Set();
-let currentLang = "en";
+let currentLang = "vi";
 let packs = {};
 let fallbackPack = {};
 
-async function loadPack(code) {
+async function loadPack(code = "vi") {
   if (packs[code]) return packs[code];
 
   try {
-    const response = await fetch(`/lang/${code}.json`);
+    const response = await fetch(`/lang/vi.json`);
     if (!response.ok) throw new Error("Language pack unavailable");
     const payload = await response.json();
-    packs[code] = payload;
+    packs["vi"] = payload;
     return payload;
   } catch {
     return {};
@@ -24,29 +24,11 @@ function normalizeLanguageCode(rawCode) {
 }
 
 export async function initI18n(defaultLang = "vi") {
-  const stored = safeLocalStorageGet(STORAGE_KEYS.language);
-  const fromUrl = new URL(window.location.href).searchParams.get("lang");
-  const fromNavigator = normalizeLanguageCode(navigator.language);
-  currentLang = normalizeLanguageCode(stored || fromUrl || fromNavigator || defaultLang);
-
-  // Persist URL-sourced language so subsequent visits without ?lang keep the choice.
-  if (!stored && fromUrl && normalizeLanguageCode(fromUrl) !== "vi") {
-    safeLocalStorageSet(STORAGE_KEYS.language, currentLang);
-  }
-
-  // Load active language pack first (critical path)
-  await loadPack(currentLang);
-  fallbackPack = packs[currentLang] || {};
-
-  // Lazy-load fallback in the background without blocking boot
-  if (currentLang !== "en" && !packs.en) {
-    loadPack("en").then((pack) => {
-      fallbackPack = pack;
-      packs.en = pack;
-    }).catch(() => {});
-  }
-
-  return currentLang;
+  currentLang = "vi";
+  safeLocalStorageSet(STORAGE_KEYS.language, "vi");
+  const pack = await loadPack("vi");
+  fallbackPack = pack || {};
+  return "vi";
 }
 
 export function getCurrentLanguage() {

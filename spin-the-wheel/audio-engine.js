@@ -432,6 +432,106 @@ export class AudioEngine {
     this.ambientLfo = null;
   }
 
+  playDrumroll(duration = 2.0) {
+    if (!this.enabledByGesture || !this.context || !this.master) return;
+    const now = this.context.currentTime;
+    const count = Math.floor(duration * 24);
+    for (let i = 0; i < count; i += 1) {
+      const delay = (i / count) * duration;
+      const progress = i / count;
+      const volume = 0.02 + progress * 0.08;
+      const freq = 120 + Math.random() * 40;
+      this.playOscillatorLayer({
+        type: "triangle",
+        frequency: freq,
+        startTime: now + delay,
+        duration: 0.04,
+        peak: volume,
+        filterType: "lowpass",
+        filterFrequency: 300
+      });
+      this.playNoiseAccent({
+        startTime: now + delay,
+        duration: 0.035,
+        peak: volume * 0.7,
+        filterType: "bandpass",
+        filterFrequency: 1400,
+        filterQ: 1.5
+      });
+    }
+  }
+
+  playDiceRoll() {
+    if (!this.enabledByGesture || !this.context || !this.master) return;
+    const now = this.context.currentTime;
+    const clicks = [0, 0.08, 0.17, 0.28, 0.40, 0.54, 0.70];
+    clicks.forEach((delay, idx) => {
+      const peak = 0.09 - idx * 0.008;
+      this.playOscillatorLayer({
+        type: "triangle",
+        frequency: 340 + Math.random() * 120,
+        startTime: now + delay,
+        duration: 0.05,
+        peak,
+        filterType: "lowpass",
+        filterFrequency: 800
+      });
+      this.playNoiseAccent({
+        startTime: now + delay,
+        duration: 0.04,
+        peak: peak * 0.8,
+        filterType: "bandpass",
+        filterFrequency: 2200,
+        filterQ: 2.0
+      });
+    });
+  }
+
+  playCoinFlip() {
+    if (!this.enabledByGesture || !this.context || !this.master) return;
+    const now = this.context.currentTime;
+    // Metallic chime flip
+    const notes = [1760, 2093, 2349, 2637];
+    notes.forEach((freq, idx) => {
+      this.playOscillatorLayer({
+        type: "sine",
+        frequency: freq,
+        startTime: now + idx * 0.04,
+        duration: 0.25,
+        peak: 0.06,
+        filterType: "highpass",
+        filterFrequency: 1500
+      });
+    });
+    // Final drop click
+    this.playOscillatorLayer({
+      type: "square",
+      frequency: 1480,
+      startTime: now + 0.55,
+      duration: 0.12,
+      peak: 0.08,
+      filterType: "bandpass",
+      filterFrequency: 2000
+    });
+  }
+
+  playJackpot() {
+    if (!this.enabledByGesture || !this.context || !this.master) return;
+    const now = this.context.currentTime;
+    const arpeggio = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00];
+    arpeggio.forEach((frequency, index) => {
+      this.playOscillatorLayer({
+        type: "triangle",
+        frequency,
+        startTime: now + index * 0.06,
+        duration: 0.45,
+        peak: 0.12,
+        filterType: "lowpass",
+        filterFrequency: 3000
+      });
+    });
+  }
+
   getNoiseBuffer() {
     if (this.noiseBuffer || !this.context) {
       return this.noiseBuffer;

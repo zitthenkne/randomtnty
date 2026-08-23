@@ -1,12 +1,11 @@
 import { AudioEngine } from "./audio-engine.js";
-import { DEFAULT_STATE, HREFLANG_CODES, SUPPORTED_LANGUAGES, TEAM_PICKER_NAMES, createEntry } from "./defaults.js";
+import { DEFAULT_STATE, HREFLANG_CODES, MULTI_WHEEL_PRESETS, SUPPORTED_LANGUAGES, TEAM_PICKER_NAMES, createEntry } from "./defaults.js";
 import { applyTranslations, getCurrentLanguage, initI18n, onLanguageChange, setLanguage, t } from "./i18n.js";
 import { decodeWheelConfig, encodeWheelConfig, estimateShareSize, readSharePayload, buildShareUrl } from "./share-codec.js";
 import { STATE_EVENTS, StateManager } from "./state-manager.js";
 import { buildTemplateEntries, getTemplatesForCurrentLanguage } from "./templates.js";
 import { THEME_ORDER, THEME_PRESETS } from "./themes.js";
-import { clearLibrary, deleteWheel, duplicateWheel, getWheel, listWheels, renameWheel, saveWheel, togglePinned } from "./wheel-library.js";
-import { STORAGE_KEYS, clamp, cryptoRandom, csvEscape, downloadFile, formatTimestamp, hasEqualWeights, parseBulkEntries, parseCsvRows, safeLocalStorageGet, safeLocalStorageRemove, safeLocalStorageSet, shuffleArray, sortEntriesAZ } from "./utils.js";
+import { STORAGE_KEYS, clamp, cryptoRandom, csvEscape, downloadFile, formatTimestamp, hasEqualWeights, makeId, parseBulkEntries, parseCsvRows, safeLocalStorageGet, safeLocalStorageRemove, safeLocalStorageSet, shuffleArray, sortEntriesAZ } from "./utils.js";
 import { WheelEngine } from "./wheel-engine.js";
 
 const SITE_ORIGIN = "https://spin.alsatian.co";
@@ -25,6 +24,20 @@ const OG_LOCALE_BY_LANG = {
 
 const dom = {
   app: document.querySelector("#app"),
+  modeSingleWheelBtn: document.querySelector("#modeSingleWheelBtn"),
+  modeMultiWheelBtn: document.querySelector("#modeMultiWheelBtn"),
+  modeBatchDrawBtn: document.querySelector("#modeBatchDrawBtn"),
+  modeTeamGenBtn: document.querySelector("#modeTeamGenBtn"),
+  modeQuickToolsBtn: document.querySelector("#modeQuickToolsBtn"),
+  singleWheelWrap: document.querySelector("#singleWheelWrap"),
+  multiWheelWrap: document.querySelector("#multiWheelWrap"),
+  multiWheelCountSelect: document.querySelector("#multiWheelCountSelect"),
+  multiWheelPresetBtn: document.querySelector("#multiWheelPresetBtn"),
+  spinAllWheelsBtn: document.querySelector("#spinAllWheelsBtn"),
+  multiWheelGrid: document.querySelector("#multiWheelGrid"),
+  multiWheelTabsNav: document.querySelector("#multiWheelTabsNav"),
+  multiWheelTitleEdit: document.querySelector("#multiWheelTitleEdit"),
+  multiWheelTitleInput: document.querySelector("#multiWheelTitleInput"),
   wheelContainer: document.querySelector("#wheelContainer"),
   wheelCanvas: document.querySelector("#wheelCanvas"),
   confettiCanvas: document.querySelector("#confettiCanvas"),
@@ -137,8 +150,92 @@ const dom = {
   resultWinner: document.querySelector("#resultWinner"),
   resultSubtitle: document.querySelector("#resultSubtitle"),
   spinAgainButton: document.querySelector("#spinAgainButton"),
+  generateWinnerCardButton: document.querySelector("#generateWinnerCardButton"),
   removeWinnerButton: document.querySelector("#removeWinnerButton"),
   closeResultButton: document.querySelector("#closeResultButton"),
+  multiWheelResultModal: document.querySelector("#multiWheelResultModal"),
+  multiWheelResultList: document.querySelector("#multiWheelResultList"),
+  multiWheelResultCombined: document.querySelector("#multiWheelResultCombined"),
+  multiSpinAgainButton: document.querySelector("#multiSpinAgainButton"),
+  copyMultiResultButton: document.querySelector("#copyMultiResultButton"),
+  generateMultiWinnerCardButton: document.querySelector("#generateMultiWinnerCardButton"),
+  closeMultiResultButton: document.querySelector("#closeMultiResultButton"),
+  batchDrawModal: document.querySelector("#batchDrawModal"),
+  batchDrawCountInput: document.querySelector("#batchDrawCountInput"),
+  batchDrawCountOutput: document.querySelector("#batchDrawCountOutput"),
+  batchNoDuplicateToggle: document.querySelector("#batchNoDuplicateToggle"),
+  batchSequentialToggle: document.querySelector("#batchSequentialToggle"),
+  startBatchDrawButton: document.querySelector("#startBatchDrawButton"),
+  batchResultsWrap: document.querySelector("#batchResultsWrap"),
+  batchPodiumGrid: document.querySelector("#batchPodiumGrid"),
+  batchWinnersList: document.querySelector("#batchWinnersList"),
+  copyBatchResultsButton: document.querySelector("#copyBatchResultsButton"),
+  generateBatchWinnerCardButton: document.querySelector("#generateBatchWinnerCardButton"),
+  closeBatchDrawButton: document.querySelector("#closeBatchDrawButton"),
+  teamGeneratorModal: document.querySelector("#teamGeneratorModal"),
+  teamDivideModeSelect: document.querySelector("#teamDivideModeSelect"),
+  teamCountControlWrap: document.querySelector("#teamCountControlWrap"),
+  teamPerCountControlWrap: document.querySelector("#teamPerCountControlWrap"),
+  teamCountSelect: document.querySelector("#teamCountSelect"),
+  teamPerCountSelect: document.querySelector("#teamPerCountSelect"),
+  teamNamingSelect: document.querySelector("#teamNamingSelect"),
+  teamMemberCountVal: document.querySelector("#teamMemberCountVal"),
+  teamCountVal: document.querySelector("#teamCountVal"),
+  teamPerGroupVal: document.querySelector("#teamPerGroupVal"),
+  teamMembersAccordion: document.querySelector("#teamMembersAccordion"),
+  teamListCountBadge: document.querySelector("#teamListCountBadge"),
+  teamCustomMembersInput: document.querySelector("#teamCustomMembersInput"),
+  teamSyncWheelBtn: document.querySelector("#teamSyncWheelBtn"),
+  teamAddAnimeSampleBtn: document.querySelector("#teamAddAnimeSampleBtn"),
+  teamClearMembersBtn: document.querySelector("#teamClearMembersBtn"),
+  divideTeamsButton: document.querySelector("#divideTeamsButton"),
+  teamsGrid: document.querySelector("#teamsGrid"),
+  copyTeamsButton: document.querySelector("#copyTeamsButton"),
+  exportTeamImageButton: document.querySelector("#exportTeamImageButton"),
+  closeTeamGenButton: document.querySelector("#closeTeamGenButton"),
+  closeTeamGenModalBtn: document.querySelector("#closeTeamGenModalBtn"),
+  quickToolsModal: document.querySelector("#quickToolsModal"),
+  closeQuickToolsButton: document.querySelector("#closeQuickToolsButton"),
+  tabDiceBtn: document.querySelector("#tabDiceBtn"),
+  tabCoinBtn: document.querySelector("#tabCoinBtn"),
+  tabBingoBtn: document.querySelector("#tabBingoBtn"),
+  toolDiceSection: document.querySelector("#toolDiceSection"),
+  toolCoinSection: document.querySelector("#toolCoinSection"),
+  toolBingoSection: document.querySelector("#toolBingoSection"),
+  diceCountSelect: document.querySelector("#diceCountSelect"),
+  diceTray: document.querySelector("#diceTray"),
+  diceTotalDisplay: document.querySelector("#diceTotalDisplay"),
+  diceBreakdownDisplay: document.querySelector("#diceBreakdownDisplay"),
+  rollDiceButton: document.querySelector("#rollDiceButton"),
+  coinSceneWrap: document.querySelector("#coinSceneWrap"),
+  coinObject: document.querySelector("#coinObject"),
+  coinResultText: document.querySelector("#coinResultText"),
+  coinStreakText: document.querySelector("#coinStreakText"),
+  coinHeadsStat: document.querySelector("#coinHeadsStat"),
+  coinTotalStat: document.querySelector("#coinTotalStat"),
+  coinTailsStat: document.querySelector("#coinTailsStat"),
+  coinRatioFill: document.querySelector("#coinRatioFill"),
+  flipCoinButton: document.querySelector("#flipCoinButton"),
+  resetCoinStatsBtn: document.querySelector("#resetCoinStatsBtn"),
+  bingoBallActive: document.querySelector("#bingoBallActive"),
+  bingoMinInput: document.querySelector("#bingoMinInput"),
+  bingoMaxInput: document.querySelector("#bingoMaxInput"),
+  drawBingoButton: document.querySelector("#drawBingoButton"),
+  autoBingoButton: document.querySelector("#autoBingoButton"),
+  resetBingoButton: document.querySelector("#resetBingoButton"),
+  bingoCalledCount: document.querySelector("#bingoCalledCount"),
+  bingoTotalCount: document.querySelector("#bingoTotalCount"),
+  copyBingoCalledBtn: document.querySelector("#copyBingoCalledBtn"),
+  bingoCalledGrid: document.querySelector("#bingoCalledGrid"),
+  winnerCardModal: document.querySelector("#winnerCardModal"),
+  winnerCardCanvas: document.querySelector("#winnerCardCanvas"),
+  downloadWinnerCardButton: document.querySelector("#downloadWinnerCardButton"),
+  copyWinnerCardButton: document.querySelector("#copyWinnerCardButton"),
+  closeWinnerCardButton: document.querySelector("#closeWinnerCardButton"),
+  closeWinnerCardModalBtn: document.querySelector("#closeWinnerCardModalBtn"),
+  multiPresetModal: document.querySelector("#multiPresetModal"),
+  multiPresetGrid: document.querySelector("#multiPresetGrid"),
+  closeMultiPresetButton: document.querySelector("#closeMultiPresetButton"),
   shareModal: document.querySelector("#shareModal"),
   shareUrlInput: document.querySelector("#shareUrlInput"),
   shareSizeStatus: document.querySelector("#shareSizeStatus"),
@@ -206,6 +303,16 @@ let confirmReturnModal = null;
 let confirmClosingByChoice = false;
 let floatingSpinObserver = null;
 let spinOnlyControlElements = null;
+
+const multiWheelEngines = [];
+let quickToolsActiveTab = "dice";
+let coinFlipStats = { total: 0, heads: 0, tails: 0 };
+let bingoState = { min: 1, max: 90, called: new Set(), current: null };
+let currentBatchWinners = [];
+let currentMultiWheelResults = [];
+let currentWinnerCardPayload = null;
+let currentDividedTeams = [];
+
 const EVENT_PRESET_KEYS = new Set(["default", "classroom", "raffle", "streamer", "party", "minimal", "dark-luxury"]);
 const AUTO_CENTER_TEXT_PREFIX = "__auto__:";
 const AUTO_CENTER_TEXT_KEY_BY_PRESET = {
@@ -228,8 +335,40 @@ function getState() {
   return stateManager.getState();
 }
 
+function getActiveWheelEntries(state) {
+  if (!state.multiWheel?.enabled) {
+    return state.entries || [];
+  }
+  const idx = state.multiWheel.activeWheelIndex || 0;
+  return state.multiWheel.wheels?.[idx]?.entries || [];
+}
+
 function activeEntries(state) {
-  return state.entries.filter((entry) => entry.enabled && !entry.eliminated && entry.label.trim());
+  const list = getActiveWheelEntries(state);
+  return list.filter((entry) => entry.enabled && !entry.eliminated && entry.label.trim());
+}
+
+function updateActiveWheelEntries(draft, recipe) {
+  if (!draft.multiWheel?.enabled) {
+    if (!Array.isArray(draft.entries)) draft.entries = [];
+    recipe(draft.entries);
+    if (draft.multiWheel?.wheels?.[0]) {
+      draft.multiWheel.wheels[0].entries = draft.entries.map((e) => ({ ...e }));
+    }
+  } else {
+    const idx = draft.multiWheel.activeWheelIndex || 0;
+    if (!Array.isArray(draft.multiWheel.wheels)) draft.multiWheel.wheels = [];
+    if (!draft.multiWheel.wheels[idx]) {
+      draft.multiWheel.wheels[idx] = { id: `mw-${idx + 1}`, title: `Vòng ${idx + 1}`, entries: [] };
+    }
+    if (!Array.isArray(draft.multiWheel.wheels[idx].entries)) {
+      draft.multiWheel.wheels[idx].entries = [];
+    }
+    recipe(draft.multiWheel.wheels[idx].entries);
+    if (idx === 0) {
+      draft.entries = draft.multiWheel.wheels[0].entries.map((e) => ({ ...e }));
+    }
+  }
 }
 
 function canRemoveWinner(state) {
@@ -466,6 +605,11 @@ function pushRecentWheel(item) {
 function renderRecentWheelsSelect() {
   if (!dom.recentWheelsSelect) return;
   dom.recentWheelsSelect.innerHTML = "";
+  if (!recentWheels.length) {
+    dom.recentWheelsSelect.classList.add("hidden");
+    return;
+  }
+  dom.recentWheelsSelect.classList.remove("hidden");
   const defaultOption = document.createElement("option");
   defaultOption.value = "";
   defaultOption.textContent = `${t("recent_wheels")}:`;
@@ -860,7 +1004,7 @@ function openSettingsModal(initialTab = "general") {
 }
 
 function renderEntries(state) {
-  const entries = state.entries;
+  const entries = getActiveWheelEntries(state);
   const spinOnly = Boolean(state.settings.spinOnly);
   dom.entriesList.innerHTML = "";
   if (dom.entryCountBadge) {
@@ -904,11 +1048,13 @@ function renderEntries(state) {
       const sourceId = event.dataTransfer?.getData("text/plain");
       if (!sourceId || sourceId === entry.id) return;
       stateManager.update((draft) => {
-        const sourceIndex = draft.entries.findIndex((item) => item.id === sourceId);
-        const targetIndex = draft.entries.findIndex((item) => item.id === entry.id);
-        if (sourceIndex < 0 || targetIndex < 0) return;
-        const [moved] = draft.entries.splice(sourceIndex, 1);
-        draft.entries.splice(targetIndex, 0, moved);
+        updateActiveWheelEntries(draft, (list) => {
+          const sourceIndex = list.findIndex((item) => item.id === sourceId);
+          const targetIndex = list.findIndex((item) => item.id === entry.id);
+          if (sourceIndex < 0 || targetIndex < 0) return;
+          const [moved] = list.splice(sourceIndex, 1);
+          list.splice(targetIndex, 0, moved);
+        });
       });
     });
 
@@ -927,7 +1073,9 @@ function renderEntries(state) {
     enable.addEventListener("click", () => {
       if (spinOnly) return;
       stateManager.update((draft) => {
-        draft.entries[index].enabled = !draft.entries[index].enabled;
+        updateActiveWheelEntries(draft, (list) => {
+          if (list[index]) list[index].enabled = !list[index].enabled;
+        });
       });
     });
     enable.disabled = spinOnly;
@@ -975,7 +1123,9 @@ function renderEntries(state) {
         if (spinOnly) return;
         const nextWeight = clamp(Number.parseFloat(weightInput.value) || 1, 0.1, 100);
         stateManager.update((draft) => {
-          draft.entries[index].weight = nextWeight;
+          updateActiveWheelEntries(draft, (list) => {
+            if (list[index]) list[index].weight = nextWeight;
+          });
         });
       });
       weightInput.disabled = spinOnly;
@@ -1014,10 +1164,14 @@ function renderEntries(state) {
       try {
         const compressed = await compressImageFile(file);
         stateManager.update((draft) => {
-          draft.entries[index].image = compressed;
-          if (!draft.entries[index].imageMode) {
-            draft.entries[index].imageMode = "image-text";
-          }
+          updateActiveWheelEntries(draft, (list) => {
+            if (list[index]) {
+              list[index].image = compressed;
+              if (!list[index].imageMode) {
+                list[index].imageMode = "image-text";
+              }
+            }
+          });
         });
       } catch {
         showToast(t("image_upload_failed"));
@@ -1036,8 +1190,12 @@ function renderEntries(state) {
       removeImageButton.addEventListener("click", () => {
         if (spinOnly) return;
         stateManager.update((draft) => {
-          draft.entries[index].image = null;
-          draft.entries[index].imageMode = "image-text";
+          updateActiveWheelEntries(draft, (list) => {
+            if (list[index]) {
+              list[index].image = null;
+              list[index].imageMode = "image-text";
+            }
+          });
         });
       });
       mediaWrap.appendChild(removeImageButton);
@@ -1059,7 +1217,9 @@ function renderEntries(state) {
       modeSelect.addEventListener("change", () => {
         if (spinOnly) return;
         stateManager.update((draft) => {
-          draft.entries[index].imageMode = modeSelect.value;
+          updateActiveWheelEntries(draft, (list) => {
+            if (list[index]) list[index].imageMode = modeSelect.value;
+          });
         });
       });
       mediaWrap.appendChild(modeSelect);
@@ -1076,7 +1236,9 @@ function renderEntries(state) {
     sliceColorInput.addEventListener("change", () => {
       if (spinOnly) return;
       stateManager.update((draft) => {
-        draft.entries[index].sliceColor = sliceColorInput.value;
+        updateActiveWheelEntries(draft, (list) => {
+          if (list[index]) list[index].sliceColor = sliceColorInput.value;
+        });
       });
     });
 
@@ -1089,7 +1251,9 @@ function renderEntries(state) {
     textColorInput.addEventListener("change", () => {
       if (spinOnly) return;
       stateManager.update((draft) => {
-        draft.entries[index].textColor = textColorInput.value;
+        updateActiveWheelEntries(draft, (list) => {
+          if (list[index]) list[index].textColor = textColorInput.value;
+        });
       });
     });
 
@@ -1102,8 +1266,12 @@ function renderEntries(state) {
     clearColor.addEventListener("click", () => {
       if (spinOnly) return;
       stateManager.update((draft) => {
-        draft.entries[index].sliceColor = null;
-        draft.entries[index].textColor = null;
+        updateActiveWheelEntries(draft, (list) => {
+          if (list[index]) {
+            list[index].sliceColor = null;
+            list[index].textColor = null;
+          }
+        });
       });
     });
     colorWrap.append(sliceColorInput, textColorInput, clearColor);
@@ -1116,7 +1284,9 @@ function renderEntries(state) {
     deleteButton.addEventListener("click", () => {
       if (spinOnly) return;
       stateManager.update((draft) => {
-        draft.entries.splice(index, 1);
+        updateActiveWheelEntries(draft, (list) => {
+          list.splice(index, 1);
+        });
       });
     });
     deleteButton.disabled = spinOnly;
@@ -1125,13 +1295,14 @@ function renderEntries(state) {
     dom.entriesList.appendChild(row);
   });
 
-  dom.resetEliminationsButton.classList.toggle("hidden", !state.entries.some((entry) => entry.eliminated));
-  dom.emptyTemplateHint.classList.toggle("hidden", state.entries.length !== 0);
+  dom.resetEliminationsButton.classList.toggle("hidden", !entries.some((entry) => entry.eliminated));
+  dom.emptyTemplateHint.classList.toggle("hidden", entries.length !== 0);
 }
 
 function enableInlineEdit(labelElement, entryId) {
   const currentState = getState();
-  const entry = currentState.entries.find((item) => item.id === entryId);
+  const entries = getActiveWheelEntries(currentState);
+  const entry = entries.find((item) => item.id === entryId);
   if (!entry) return;
   const input = document.createElement("input");
   input.type = "text";
@@ -1145,10 +1316,12 @@ function enableInlineEdit(labelElement, entryId) {
   const save = () => {
     const nextLabel = input.value.trim();
     stateManager.update((draft) => {
-      const index = draft.entries.findIndex((item) => item.id === entryId);
-      if (index >= 0) {
-        draft.entries[index].label = nextLabel || t("untitled_entry");
-      }
+      updateActiveWheelEntries(draft, (list) => {
+        const index = list.findIndex((item) => item.id === entryId);
+        if (index >= 0) {
+          list[index].label = nextLabel || t("untitled_entry");
+        }
+      });
     });
   };
 
@@ -1646,7 +1819,8 @@ function downloadLatestResultImage() {
 }
 
 function updateResultModal(state) {
-  const winner = state.entries.find((entry) => entry.id === currentWinnerEntryId);
+  const entries = getActiveWheelEntries(state);
+  const winner = entries.find((entry) => entry.id === currentWinnerEntryId) || state.entries.find((entry) => entry.id === currentWinnerEntryId);
   if (!winner) return;
 
   dom.resultWinner.textContent = winner.label;
@@ -1660,6 +1834,12 @@ function updateResultModal(state) {
     dom.resultSubtitle.textContent = "";
   }
 
+  currentWinnerCardPayload = {
+    winnerName: winner.label,
+    subtitle: winner.subtitle || "",
+    wheelTitle: state.title || "Vòng quay định mệnh TNTY"
+  };
+
   dom.removeWinnerButton.classList.toggle("hidden", !canRemoveWinner(state));
 }
 
@@ -1670,7 +1850,29 @@ function renderAll(state) {
   renderSettings(state);
   renderProbability(state);
   updateThemeVars(state.theme);
-  wheelEngine.setWheelState({ entries: state.entries, settings: state.settings, theme: state.theme });
+
+  const isMulti = Boolean(state.multiWheel?.enabled);
+  if (dom.singleWheelWrap && dom.multiWheelWrap) {
+    dom.singleWheelWrap.classList.toggle("hidden", isMulti);
+    dom.multiWheelWrap.classList.toggle("hidden", !isMulti);
+  }
+  if (dom.multiWheelTabsNav) {
+    dom.multiWheelTabsNav.classList.toggle("hidden", !isMulti);
+  }
+  if (dom.multiWheelTitleEdit) {
+    dom.multiWheelTitleEdit.classList.toggle("hidden", !isMulti);
+  }
+  if (dom.modeSingleWheelBtn && dom.modeMultiWheelBtn) {
+    dom.modeSingleWheelBtn.classList.toggle("active", !isMulti);
+    dom.modeMultiWheelBtn.classList.toggle("active", isMulti);
+  }
+
+  if (!isMulti) {
+    wheelEngine.setWheelState({ entries: state.entries, settings: state.settings, theme: state.theme });
+  } else {
+    renderMultiWheelsGrid(state);
+  }
+
   const spinLabel = state.settings.manualStop && manualSpinPending && wheelEngine.isSpinning()
     ? t("stop_button")
     : resolveCenterText(state.theme);
@@ -1686,6 +1888,1137 @@ function renderAll(state) {
   }
   applySpinOnlyState(state);
   updateResultModal(state);
+}
+
+/* ==========================================================================
+   MULTI-WHEEL ENGINE & CONTROLS
+   ========================================================================== */
+function renderMultiWheelsGrid(state) {
+  if (!dom.multiWheelGrid) return;
+  const count = clamp(Number(state.multiWheel?.wheelCount) || 2, 2, 4);
+  const wheels = state.multiWheel?.wheels || [];
+  const activeIdx = state.multiWheel?.activeWheelIndex || 0;
+
+  if (dom.multiWheelCountSelect) {
+    dom.multiWheelCountSelect.value = String(count);
+  }
+  dom.multiWheelGrid.className = `multi-wheel-grid grid-${count}`;
+
+  // Update tabs in sidebar
+  if (dom.multiWheelTabsNav) {
+    const tabButtons = dom.multiWheelTabsNav.querySelectorAll(".multi-tab-btn");
+    tabButtons.forEach((btn, idx) => {
+      if (idx < count) {
+        btn.classList.remove("hidden");
+        const wheelObj = wheels[idx];
+        const entriesCount = (wheelObj?.entries || []).length;
+        btn.textContent = `${wheelObj?.title || `Vòng ${idx + 1}`} (${entriesCount})`;
+        btn.classList.toggle("active", idx === activeIdx);
+      } else {
+        btn.classList.add("hidden");
+      }
+    });
+  }
+
+  // Update title input
+  if (dom.multiWheelTitleInput) {
+    dom.multiWheelTitleInput.value = wheels[activeIdx]?.title || `Vòng ${activeIdx + 1}`;
+  }
+
+  // Ensure DOM cards exist
+  let cards = dom.multiWheelGrid.querySelectorAll(".multi-wheel-card");
+  while (cards.length < count) {
+    const idx = cards.length;
+    const card = document.createElement("div");
+    card.className = "multi-wheel-card";
+    card.id = `multiWheelCard_${idx}`;
+    card.innerHTML = `
+      <div class="multi-wheel-card-header">
+        <span class="multi-wheel-title-badge" id="multiWheelTitleBadge_${idx}">${wheels[idx]?.title || `Vòng ${idx + 1}`}</span>
+        <button class="multi-wheel-edit-btn" type="button" data-edit-wheel="${idx}" title="Chỉnh sửa vòng này" aria-label="Chỉnh sửa vòng này">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+        </button>
+      </div>
+      <div class="multi-wheel-sub-container" id="multiWheelContainer_${idx}">
+        <canvas id="multiWheelCanvas_${idx}"></canvas>
+        <div class="multi-wheel-pointer"></div>
+        <button class="multi-wheel-center-btn" type="button" data-spin-wheel="${idx}">QUAY</button>
+      </div>
+      <div class="multi-wheel-card-footer">
+        <button class="ghost-btn sub-spin-btn" type="button" data-spin-wheel="${idx}" style="font-size: var(--text-xs); font-weight: 700;">Quay vòng này</button>
+      </div>
+    `;
+    dom.multiWheelGrid.appendChild(card);
+    cards = dom.multiWheelGrid.querySelectorAll(".multi-wheel-card");
+  }
+
+  // Hide extra cards
+  cards.forEach((card, idx) => {
+    card.classList.toggle("hidden", idx >= count);
+    card.classList.toggle("is-active-card", idx === activeIdx);
+  });
+
+  // Sync / init engines
+  for (let i = 0; i < count; i += 1) {
+    const wheelData = wheels[i] || { entries: [], title: `Vòng ${i + 1}`, themePreset: "tnty" };
+    const canvas = document.querySelector(`#multiWheelCanvas_${i}`);
+    const container = document.querySelector(`#multiWheelContainer_${i}`);
+    const titleBadge = document.querySelector(`#multiWheelTitleBadge_${i}`);
+    if (titleBadge) {
+      titleBadge.textContent = wheelData.title || `Vòng ${i + 1}`;
+    }
+
+    if (!multiWheelEngines[i] && canvas && container) {
+      multiWheelEngines[i] = new WheelEngine({ canvas, container });
+    }
+
+    if (multiWheelEngines[i]) {
+      const entries = Array.isArray(wheelData.entries) ? wheelData.entries : [];
+      multiWheelEngines[i].setWheelState({
+        entries,
+        settings: state.settings,
+        theme: {
+          ...state.theme,
+          preset: wheelData.themePreset || (i === 0 ? "tnty" : i === 1 ? "ocean" : i === 2 ? "sunset" : "candy")
+        }
+      });
+    }
+  }
+}
+
+function performMultiSpin() {
+  clearPendingResultModal();
+  const state = getState();
+  const count = clamp(Number(state.multiWheel?.wheelCount) || 2, 2, 4);
+
+  // Check if any wheel is spinning
+  for (let i = 0; i < count; i += 1) {
+    if (multiWheelEngines[i]?.isSpinning()) return;
+  }
+
+  // Validate entries
+  for (let i = 0; i < count; i += 1) {
+    const wheelEntries = (state.multiWheel?.wheels?.[i]?.entries || []).filter((e) => e.enabled && !e.eliminated);
+    if (wheelEntries.length < 2) {
+      showToast(`${state.multiWheel?.wheels?.[i]?.title || `Vòng ${i + 1}`} cần ít nhất 2 mục để quay!`);
+      return;
+    }
+  }
+
+  audioEngine.ensureReady();
+  audioEngine.playDrumroll(3.5);
+  triggerHaptic("start", state.settings);
+
+  const results = [];
+  let completedCount = 0;
+
+  for (let i = 0; i < count; i += 1) {
+    const engine = multiWheelEngines[i];
+    const wheelData = state.multiWheel.wheels[i];
+    const prepared = prepareSpinOutcome(state, { engine });
+    if (!prepared) continue;
+
+    const { winnerSegment, absoluteTargetRotation, randomValue, totalWeight, randomMeta } = prepared;
+    const winnerEntry = winnerSegment.entry;
+    const durationMs = 3200 + i * 250;
+
+    setTimeout(() => {
+      engine.spinTo({
+        absoluteTargetRotation,
+        durationMs,
+        reducedMotion: reducedMotionEnabled(state),
+        onTick: (segmentIndex, velocity) => {
+          if (state.audio.tickEnabled && i === 0) {
+            audioEngine.playTickVariant(state.audio.tickSound || "click", velocity);
+          }
+        },
+        onResult: () => {
+          results[i] = {
+            wheelIndex: i,
+            wheelTitle: wheelData.title || `Vòng ${i + 1}`,
+            winnerEntry,
+            randomValue,
+            totalWeight,
+            randomMeta
+          };
+          completedCount += 1;
+          if (completedCount === count) {
+            finalizeMultiSpinResults(results);
+          }
+        }
+      });
+    }, i * 150);
+  }
+}
+
+function finalizeMultiSpinResults(results) {
+  audioEngine.playJackpot();
+  startCelebration(getState());
+  currentMultiWheelResults = results;
+
+  // Render modal
+  dom.multiWheelResultList.innerHTML = "";
+  const combinedParts = [];
+
+  results.forEach((res) => {
+    if (!res) return;
+    const item = document.createElement("div");
+    item.className = "multi-result-item";
+    item.innerHTML = `
+      <span class="multi-result-wheel-name">${escapeHtml(res.wheelTitle)}</span>
+      <span class="multi-result-winner">${escapeHtml(res.winnerEntry.label)}</span>
+    `;
+    dom.multiWheelResultList.appendChild(item);
+    combinedParts.push(`[${res.wheelTitle}: ${res.winnerEntry.label}]`);
+  });
+
+  const combinedStr = combinedParts.join("  ➔  ");
+  dom.multiWheelResultCombined.textContent = combinedStr;
+
+  currentWinnerCardPayload = {
+    winnerName: results.map((r) => r.winnerEntry.label).join(" + "),
+    subtitle: "Kết quả phối hợp nhiều vòng quay",
+    wheelTitle: "CLB Tình Nguyện Trường Y - Man in Red"
+  };
+
+  // Save to history
+  stateManager.update((draft) => {
+    const combinedLabel = results.map((r) => r.winnerEntry.label).join(" + ");
+    draft.results.unshift({
+      id: makeId(),
+      timestamp: Date.now(),
+      label: combinedLabel,
+      mode: "multi-wheel",
+      randomValue: 0,
+      totalWeight: 0,
+      verificationHash: hashString(combinedLabel + Date.now()).toString(16).padStart(8, "0")
+    });
+  });
+
+  openModal(dom.multiWheelResultModal);
+}
+
+function performSingleSubSpin(index) {
+  clearPendingResultModal();
+  const state = getState();
+  const engine = multiWheelEngines[index];
+  if (!engine || engine.isSpinning()) return;
+
+  const wheelData = state.multiWheel?.wheels?.[index];
+  if (!wheelData) return;
+  const wheelEntries = (wheelData.entries || []).filter((e) => e.enabled && !e.eliminated);
+  if (wheelEntries.length < 2) {
+    showToast(`${wheelData.title || `Vòng ${index + 1}`} cần ít nhất 2 mục để quay!`);
+    return;
+  }
+
+  audioEngine.ensureReady();
+  triggerHaptic("start", state.settings);
+  const prepared = prepareSpinOutcome(state, { engine });
+  if (!prepared) return;
+
+  const { winnerSegment, absoluteTargetRotation, randomValue, totalWeight, randomMeta } = prepared;
+  const winnerEntry = winnerSegment.entry;
+
+  engine.spinTo({
+    absoluteTargetRotation,
+    durationMs: 3000,
+    reducedMotion: reducedMotionEnabled(state),
+    onTick: (segmentIndex, velocity) => {
+      if (state.audio.tickEnabled) {
+        audioEngine.playTickVariant(state.audio.tickSound || "click", velocity);
+      }
+    },
+    onResult: () => {
+      audioEngine.playWin();
+      startCelebration(state);
+      currentWinnerEntryId = winnerEntry.id;
+      dom.resultWinner.textContent = winnerEntry.label;
+      dom.resultSubtitle.textContent = wheelData.title || `Vòng ${index + 1}`;
+      dom.resultSubtitle.classList.remove("hidden");
+      currentWinnerCardPayload = {
+        winnerName: winnerEntry.label,
+        subtitle: winnerEntry.subtitle || "",
+        wheelTitle: wheelData.title || `Vòng ${index + 1}`
+      };
+      openModal(dom.resultModal);
+    }
+  });
+}
+
+function openMultiPresetModal() {
+  renderMultiPresetGrid();
+  openModal(dom.multiPresetModal);
+}
+
+function renderMultiPresetGrid() {
+  dom.multiPresetGrid.innerHTML = "";
+  MULTI_WHEEL_PRESETS.forEach((preset) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "template-item";
+    card.innerHTML = `
+      <span class="template-item-title">${escapeHtml(preset.title)}</span>
+      <span class="template-item-count">${preset.wheels.length} bánh xe</span>
+      <span class="template-item-preview">${preset.wheels.map((w) => w.title).join(" ➔ ")}</span>
+    `;
+    card.addEventListener("click", () => {
+      applyMultiWheelPreset(preset);
+      closeModal();
+    });
+    dom.multiPresetGrid.appendChild(card);
+  });
+}
+
+function applyMultiWheelPreset(preset) {
+  stateManager.update((draft) => {
+    draft.multiWheel.enabled = true;
+    draft.multiWheel.wheelCount = preset.wheels.length;
+    draft.multiWheel.activeWheelIndex = 0;
+    draft.multiWheel.wheels = preset.wheels.map((w, idx) => ({
+      id: `mw-${idx + 1}`,
+      title: w.title,
+      themePreset: w.themePreset || "tnty",
+      entries: w.entries.map((label) => createEntry(label))
+    }));
+    draft.entries = draft.multiWheel.wheels[0].entries.map((e) => ({ ...e }));
+  });
+  showToast(`Đã áp dụng mẫu "${preset.title}"!`);
+}
+
+/* ==========================================================================
+   BATCH DRAW (RÚT THĂM HÀNG LOẠT)
+   ========================================================================== */
+function openBatchDrawModal() {
+  const state = getState();
+  const entries = activeEntries(state);
+  const maxAvailable = Math.max(1, entries.length);
+  dom.batchDrawCountInput.max = String(Math.min(50, Math.max(10, maxAvailable)));
+  dom.batchDrawCountInput.value = String(Math.min(3, maxAvailable));
+  dom.batchDrawCountOutput.value = dom.batchDrawCountInput.value;
+  dom.batchResultsWrap.classList.add("hidden");
+  openModal(dom.batchDrawModal);
+}
+
+function executeBatchDraw() {
+  const state = getState();
+  const entries = activeEntries(state);
+  if (entries.length < 1) {
+    showToast(t("need_two_entries"));
+    return;
+  }
+
+  const count = Math.min(Number(dom.batchDrawCountInput.value) || 1, 50);
+  const noDuplicate = dom.batchNoDuplicateToggle.checked;
+  const isSequential = dom.batchSequentialToggle.checked;
+
+  audioEngine.ensureReady();
+  audioEngine.playDrumroll(isSequential ? 2.5 : 0.8);
+
+  const drawPool = [...entries];
+  const winners = [];
+
+  for (let i = 0; i < count; i += 1) {
+    if (!drawPool.length) break;
+    const randomIdx = Math.floor(cryptoRandom() * drawPool.length);
+    if (noDuplicate) {
+      const [winner] = drawPool.splice(randomIdx, 1);
+      winners.push(winner);
+    } else {
+      winners.push(drawPool[randomIdx]);
+    }
+  }
+
+  currentBatchWinners = winners;
+
+  const showResults = () => {
+    audioEngine.playJackpot();
+    startCelebration(state);
+    renderBatchResults(winners);
+  };
+
+  if (isSequential) {
+    dom.startBatchDrawButton.disabled = true;
+    dom.startBatchDrawButton.textContent = "⏳ Đang quay...";
+    setTimeout(() => {
+      dom.startBatchDrawButton.disabled = false;
+      dom.startBatchDrawButton.textContent = "⚡ BẮT ĐẦU RÚT THĂM";
+      showResults();
+    }, 1800);
+  } else {
+    showResults();
+  }
+}
+
+function renderBatchResults(winners) {
+  dom.batchResultsWrap.classList.remove("hidden");
+  dom.batchPodiumGrid.innerHTML = "";
+  dom.batchWinnersList.innerHTML = "";
+
+  // Render Podium for top 3
+  const top3Medals = ["🥇", "🥈", "🥉"];
+  const top3Ranks = ["Giải Nhất", "Giải Nhì", "Giải Ba"];
+  const podiumCount = Math.min(3, winners.length);
+
+  for (let i = 0; i < podiumCount; i += 1) {
+    const card = document.createElement("div");
+    card.className = `podium-card rank-${i + 1}`;
+    card.innerHTML = `
+      <span class="podium-medal">${top3Medals[i]}</span>
+      <span class="podium-rank-label">${top3Ranks[i]}</span>
+      <span class="podium-name">${escapeHtml(winners[i].label)}</span>
+    `;
+    dom.batchPodiumGrid.appendChild(card);
+  }
+
+  // Render remaining in list
+  for (let i = podiumCount; i < winners.length; i += 1) {
+    const row = document.createElement("div");
+    row.className = "batch-winner-row";
+    row.innerHTML = `
+      <span class="batch-winner-rank">#${i + 1}</span>
+      <span class="batch-winner-name">${escapeHtml(winners[i].label)}</span>
+    `;
+    dom.batchWinnersList.appendChild(row);
+  }
+}
+
+function copyBatchResults() {
+  if (!currentBatchWinners.length) return;
+  const lines = [
+    "🏆 KẾT QUẢ RÚT THĂM MAY MẮN - CLB TÌNH NGUYỆN TRƯỜNG Y 🏆",
+    "---"
+  ];
+  currentBatchWinners.forEach((w, idx) => {
+    const icon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "🎖";
+    lines.push(`${icon} Hạng ${idx + 1}: ${w.label}`);
+  });
+  lines.push("---");
+  lines.push("Quay bằng Bánh xe định mệnh TNTY");
+  navigator.clipboard.writeText(lines.join("\n")).then(() => {
+    showToast("Đã sao chép danh sách trúng thưởng!");
+  }).catch(() => {
+    showToast("Không thể sao chép");
+  });
+}
+
+/* ==========================================================================
+   TEAM GENERATOR (CHIA NHÓM CHUYÊN NGHIỆP)
+   ========================================================================== */
+const TEAM_NAMES_PRESETS = {
+  tnty: [
+    { name: "Đội Áo Đỏ TNTY ❤", color: "#e63946" },
+    { name: "Đội Blouse Trắng 🩺", color: "#2563eb" },
+    { name: "Đội Cấp Cứu 115 🚑", color: "#ea580c" },
+    { name: "Đội Tình Nguyện Trẻ 🌟", color: "#9333ea" },
+    { name: "Đội Nụ Cười Y Khoa 😊", color: "#059669" },
+    { name: "Đội Trái Tim Nhân Ái 💖", color: "#db2777" },
+    { name: "Đội Thầy Thuốc Tương Lai 🌿", color: "#16a34a" },
+    { name: "Đội Man In Red 🚩", color: "#dc2626" }
+  ],
+  anime: [
+    { name: "Băng Mũ Rơm 👒", color: "#ef4444" },
+    { name: "Làng Lá Ninja 🍥", color: "#f97316" },
+    { name: "Sát Quỷ Đội ⚔", color: "#10b981" },
+    { name: "Thám Tử Lừng Danh 👓", color: "#3b82f6" },
+    { name: "Siêu Xayda 7 Ngọc 🔥", color: "#eab308" },
+    { name: "Học Viện Anh Hùng ⚡", color: "#8b5cf6" },
+    { name: "Trinh Sát Đoàn 🛡", color: "#06b6d4" },
+    { name: "Hội Pháp Sư Fairy 🔮", color: "#ec4899" }
+  ],
+  color: [
+    { name: "Đội Đỏ Rực Rỡ 🔴", color: "#ef4444" },
+    { name: "Đội Xanh Hy Vọng 🔵", color: "#3b82f6" },
+    { name: "Đội Vàng Tươi Tắn 🟡", color: "#eab308" },
+    { name: "Đội Lục Sức Sống 🟢", color: "#22c55e" },
+    { name: "Đội Tím Thủy Chung 🟣", color: "#a855f7" },
+    { name: "Đội Cam Năng Động 🟠", color: "#f97316" },
+    { name: "Đội Hồng Dễ Thương 🌸", color: "#ec4899" },
+    { name: "Đội Lam Tỏa Sáng 💎", color: "#06b6d4" }
+  ],
+  number: [
+    { name: "Đội 1 🚩", color: "#ef4444" },
+    { name: "Đội 2 🚩", color: "#3b82f6" },
+    { name: "Đội 3 🚩", color: "#22c55e" },
+    { name: "Đội 4 🚩", color: "#eab308" },
+    { name: "Đội 5 🚩", color: "#a855f7" },
+    { name: "Đội 6 🚩", color: "#f97316" },
+    { name: "Đội 7 🚩", color: "#ec4899" },
+    { name: "Đội 8 🚩", color: "#06b6d4" }
+  ]
+};
+
+const ANIME_SAMPLE_MEMBERS = [
+  "Luffy 👒", "Zoro ⚔", "Sanji 🍳", "Nami 🍊",
+  "Naruto 🍥", "Sasuke ⚡", "Conan 👓", "Tanjiro 🌊",
+  "Goku 🔥", "Nezuko 🎋", "Chopper 🌸", "Usopp 🎯"
+];
+
+function getTeamMemberList() {
+  const customText = dom.teamCustomMembersInput?.value?.trim();
+  if (customText) {
+    const lines = customText.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+    if (lines.length > 0) return lines;
+  }
+  const state = getState();
+  const wheelMembers = activeEntries(state).map((e) => e.label).filter(Boolean);
+  if (wheelMembers.length >= 2) return wheelMembers;
+  return [...ANIME_SAMPLE_MEMBERS];
+}
+
+function updateTeamStatsSummary() {
+  const members = getTeamMemberList();
+  const total = members.length;
+  const mode = dom.teamDivideModeSelect?.value || "by_teams";
+  
+  let teamCount = 3;
+  let perGroup = 0;
+
+  if (mode === "by_members") {
+    const perCount = clamp(Number(dom.teamPerCountSelect?.value) || 4, 2, 10);
+    teamCount = Math.max(2, Math.ceil(total / perCount));
+    perGroup = perCount;
+  } else {
+    teamCount = clamp(Number(dom.teamCountSelect?.value) || 3, 2, 8);
+    perGroup = Math.max(1, Math.round(total / teamCount));
+  }
+
+  if (dom.teamMemberCountVal) dom.teamMemberCountVal.textContent = String(total);
+  if (dom.teamCountVal) dom.teamCountVal.textContent = `${teamCount} Đội`;
+  if (dom.teamPerGroupVal) dom.teamPerGroupVal.textContent = `~${perGroup} người`;
+  if (dom.teamListCountBadge) dom.teamListCountBadge.textContent = String(total);
+}
+
+function openTeamGeneratorModal() {
+  updateTeamStatsSummary();
+  openModal(dom.teamGeneratorModal);
+  if (!currentDividedTeams.length) {
+    executeDivideTeams();
+  }
+}
+
+function executeDivideTeams() {
+  const members = getTeamMemberList();
+  if (members.length < 2) {
+    showToast("Cần ít nhất 2 thành viên để chia nhóm!");
+    return;
+  }
+
+  const mode = dom.teamDivideModeSelect?.value || "by_teams";
+  let teamCount = 3;
+  if (mode === "by_members") {
+    const perCount = clamp(Number(dom.teamPerCountSelect?.value) || 4, 2, 10);
+    teamCount = Math.max(2, Math.min(8, Math.ceil(members.length / perCount)));
+  } else {
+    teamCount = clamp(Number(dom.teamCountSelect?.value) || 3, 2, 8);
+  }
+
+  const namingStyle = dom.teamNamingSelect?.value || "tnty";
+  const namePreset = TEAM_NAMES_PRESETS[namingStyle] || TEAM_NAMES_PRESETS.tnty;
+
+  audioEngine.ensureReady();
+  audioEngine.playDiceRoll();
+
+  const shuffled = shuffleArray([...members]);
+  const teams = Array.from({ length: teamCount }, (_, i) => ({
+    id: `team_${i}`,
+    name: namePreset[i % namePreset.length].name,
+    color: namePreset[i % namePreset.length].color,
+    members: []
+  }));
+
+  shuffled.forEach((member, idx) => {
+    teams[idx % teamCount].members.push(member);
+  });
+
+  currentDividedTeams = teams;
+  updateTeamStatsSummary();
+  renderTeamCards(teams);
+  showToast(`Đã chia ${members.length} thành viên thành ${teamCount} đội!`);
+}
+
+function renderTeamCards(teams) {
+  if (!dom.teamsGrid) return;
+  dom.teamsGrid.innerHTML = "";
+  teams.forEach((team, tIdx) => {
+    const card = document.createElement("div");
+    card.className = "team-card";
+    card.style.animation = `modal-enter 0.3s ease forwards ${tIdx * 0.05}s`;
+
+    const header = document.createElement("div");
+    header.className = "team-card-header";
+    header.style.background = team.color;
+
+    const titleInput = document.createElement("input");
+    titleInput.className = "team-title-inline-input";
+    titleInput.type = "text";
+    titleInput.value = team.name;
+    titleInput.title = "Bấm để đổi tên đội";
+    titleInput.addEventListener("input", (e) => {
+      team.name = e.target.value.trim() || `Đội ${tIdx + 1}`;
+    });
+
+    const countSpan = document.createElement("span");
+    countSpan.style.whiteSpace = "nowrap";
+    countSpan.style.fontSize = "var(--text-xs)";
+    countSpan.style.fontWeight = "800";
+    countSpan.textContent = `(${team.members.length})`;
+
+    header.appendChild(titleInput);
+    header.appendChild(countSpan);
+    card.appendChild(header);
+
+    const membersWrap = document.createElement("div");
+    membersWrap.className = "team-card-members";
+
+    team.members.forEach((m, mIdx) => {
+      const pill = document.createElement("div");
+      pill.className = "team-member-pill";
+      pill.innerHTML = `
+        <span><strong>${mIdx + 1}.</strong> ${escapeHtml(m)}</span>
+        <div class="team-member-actions">
+          <button class="team-member-move-btn" title="Chuyển sang đội tiếp theo" data-move-team="${tIdx}" data-member-idx="${mIdx}">⇄</button>
+        </div>
+      `;
+      membersWrap.appendChild(pill);
+    });
+
+    card.appendChild(membersWrap);
+    dom.teamsGrid.appendChild(card);
+  });
+
+  // Attach move button handlers
+  dom.teamsGrid.querySelectorAll(".team-member-move-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const fromTeamIdx = Number(btn.dataset.moveTeam);
+      const memberIdx = Number(btn.dataset.memberIdx);
+      if (currentDividedTeams.length <= 1) return;
+      const targetTeamIdx = (fromTeamIdx + 1) % currentDividedTeams.length;
+      const moved = currentDividedTeams[fromTeamIdx].members.splice(memberIdx, 1)[0];
+      if (moved) {
+        currentDividedTeams[targetTeamIdx].members.push(moved);
+        renderTeamCards(currentDividedTeams);
+      }
+    });
+  });
+}
+
+function copyTeamsList() {
+  if (!currentDividedTeams.length) return;
+  const lines = [
+    "👥 BẢNG PHÂN CHIA ĐỘI - CLB TÌNH NGUYỆN TRƯỜNG Y 👥",
+    "---"
+  ];
+  currentDividedTeams.forEach((t) => {
+    lines.push(`\n📌 ${t.name} (${t.members.length} thành viên):`);
+    t.members.forEach((m, idx) => lines.push(`  ${idx + 1}. ${m}`));
+  });
+  lines.push("\n---");
+  lines.push("Tạo bởi Bánh xe định mệnh TNTY");
+  navigator.clipboard.writeText(lines.join("\n")).then(() => {
+    showToast("Đã sao chép danh sách phân đội!");
+  }).catch(() => {
+    showToast("Không thể sao chép");
+  });
+}
+
+function exportTeamDiagramImage() {
+  if (!currentDividedTeams.length) {
+    showToast("Chưa có danh sách chia nhóm để xuất ảnh!");
+    return;
+  }
+  const canvas = document.createElement("canvas");
+  const width = 1200;
+  const height = 800;
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+
+  // Background
+  const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+  bgGrad.addColorStop(0, "#190407");
+  bgGrad.addColorStop(0.5, "#2b070e");
+  bgGrad.addColorStop(1, "#120204");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Border frame
+  ctx.strokeStyle = "rgba(230, 57, 70, 0.4)";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, width - 40, height - 40);
+
+  // Header Title
+  ctx.font = "bold 32px 'Be Vietnam Pro', sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText("CLB TÌNH NGUYỆN TRƯỜNG Y - MAN IN RED", width / 2, 70);
+
+  ctx.font = "bold 20px 'Be Vietnam Pro', sans-serif";
+  ctx.fillStyle = "#ffb3ba";
+  ctx.fillText("BẢNG PHÂN CHIA ĐỘI HOẠT ĐỘNG", width / 2, 105);
+
+  // Teams Layout Grid
+  const teams = currentDividedTeams;
+  const count = teams.length;
+  const cols = count <= 3 ? count : count <= 4 ? 2 : count <= 6 ? 3 : 4;
+  const rows = Math.ceil(count / cols);
+
+  const startX = 60;
+  const startY = 140;
+  const availWidth = width - 120;
+  const availHeight = height - 190;
+  const gap = 20;
+
+  const cardW = (availWidth - (cols - 1) * gap) / cols;
+  const cardH = (availHeight - (rows - 1) * gap) / rows;
+
+  teams.forEach((team, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = startX + col * (cardW + gap);
+    const y = startY + row * (cardH + gap);
+
+    // Card background
+    ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x, y, cardW, cardH, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // Card Header
+    ctx.fillStyle = team.color || "#e63946";
+    ctx.beginPath();
+    ctx.roundRect(x, y, cardW, 42, [12, 12, 0, 0]);
+    ctx.fill();
+
+    ctx.font = "bold 16px 'Be Vietnam Pro', sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.fillText(`${team.name} (${team.members.length})`, x + 14, y + 26);
+
+    // Member list
+    ctx.font = "14px 'Be Vietnam Pro', sans-serif";
+    ctx.fillStyle = "#e2e8f0";
+    let my = y + 66;
+    team.members.slice(0, 7).forEach((m, mIdx) => {
+      ctx.fillText(`${mIdx + 1}. ${m}`, x + 16, my);
+      my += 22;
+    });
+    if (team.members.length > 7) {
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillText(`...và ${team.members.length - 7} thành viên khác`, x + 16, my);
+    }
+  });
+
+  const link = document.createElement("a");
+  link.download = `so-do-chia-nhom-tnty-${Date.now()}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+  showToast("Đã xuất ảnh sơ đồ chia nhóm!");
+}
+
+/* ==========================================================================
+   QUICK TOOLS (XÚC XẮC, ĐỒNG XU, LÔ TÔ 3D)
+   ========================================================================== */
+function openQuickToolsModal() {
+  openModal(dom.quickToolsModal);
+  switchQuickToolTab(quickToolsActiveTab);
+}
+
+function switchQuickToolTab(tab) {
+  quickToolsActiveTab = tab;
+  dom.tabDiceBtn?.classList.toggle("active", tab === "dice");
+  dom.tabCoinBtn?.classList.toggle("active", tab === "coin");
+  dom.tabBingoBtn?.classList.toggle("active", tab === "bingo");
+
+  dom.toolDiceSection?.classList.toggle("hidden", tab !== "dice");
+  dom.toolCoinSection?.classList.toggle("hidden", tab !== "coin");
+  dom.toolBingoSection?.classList.toggle("hidden", tab !== "bingo");
+
+  if (tab === "dice" && !dom.diceTray?.children.length) {
+    executeRollDice();
+  }
+  if (tab === "bingo" && !dom.bingoCalledGrid?.children.length) {
+    initBingoGrid();
+  }
+}
+
+const DICE_PIPS = {
+  1: ["pip-g"],
+  2: ["pip-a", "pip-b"],
+  3: ["pip-a", "pip-g", "pip-b"],
+  4: ["pip-a", "pip-c", "pip-d", "pip-b"],
+  5: ["pip-a", "pip-c", "pip-g", "pip-d", "pip-b"],
+  6: ["pip-a", "pip-c", "pip-e", "pip-f", "pip-d", "pip-b"]
+};
+
+function executeRollDice() {
+  const count = clamp(Number(dom.diceCountSelect?.value) || 2, 1, 6);
+  audioEngine.ensureReady();
+  audioEngine.playDiceRoll();
+
+  dom.diceTray.innerHTML = "";
+  let total = 0;
+  const values = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const val = Math.floor(cryptoRandom() * 6) + 1;
+    values.push(val);
+    total += val;
+
+    const die = document.createElement("div");
+    die.className = "dice-cube rolling";
+    const pips = DICE_PIPS[val] || [];
+    pips.forEach((p) => {
+      const pipEl = document.createElement("div");
+      pipEl.className = `dice-pip ${p}`;
+      if (val === 1) pipEl.style.background = "#e63946";
+      die.appendChild(pipEl);
+    });
+    dom.diceTray.appendChild(die);
+  }
+
+  dom.diceTotalDisplay.textContent = String(total);
+  if (dom.diceBreakdownDisplay) {
+    dom.diceBreakdownDisplay.textContent = count > 1 ? `(${values.join(" + ")})` : "";
+  }
+
+  setTimeout(() => {
+    dom.diceTray.querySelectorAll(".dice-cube").forEach((d) => d.classList.remove("rolling"));
+  }, 600);
+}
+
+let coinFlipStreak = { side: null, count: 0 };
+
+function executeFlipCoin() {
+  audioEngine.ensureReady();
+  audioEngine.playCoinFlip();
+
+  const isHeads = cryptoRandom() >= 0.5;
+  const outcomeKey = isHeads ? "heads" : "tails";
+
+  dom.coinObject.classList.add("flipping");
+  dom.flipCoinButton.disabled = true;
+
+  setTimeout(() => {
+    dom.coinObject.classList.remove("flipping");
+    dom.flipCoinButton.disabled = false;
+    dom.coinObject.style.transform = isHeads ? "rotateY(0deg)" : "rotateY(180deg)";
+
+    coinFlipStats.total += 1;
+    if (isHeads) coinFlipStats.heads += 1;
+    else coinFlipStats.tails += 1;
+
+    // Streak logic
+    if (coinFlipStreak.side === outcomeKey) {
+      coinFlipStreak.count += 1;
+    } else {
+      coinFlipStreak.side = outcomeKey;
+      coinFlipStreak.count = 1;
+    }
+
+    const headsPct = Math.round((coinFlipStats.heads / coinFlipStats.total) * 100) || 0;
+    const tailsPct = Math.round((coinFlipStats.tails / coinFlipStats.total) * 100) || 0;
+
+    dom.coinResultText.textContent = isHeads ? "👑 KẾT QUẢ: NGỬA (HEADS)" : "⭐ KẾT QUẢ: SẤP (TAILS)";
+
+    if (dom.coinStreakText) {
+      if (coinFlipStreak.count >= 2) {
+        dom.coinStreakText.textContent = `🔥 Chuỗi ${coinFlipStreak.count} lần ${isHeads ? "Ngửa" : "Sấp"} liên tiếp!`;
+        dom.coinStreakText.classList.remove("hidden");
+      } else {
+        dom.coinStreakText.classList.add("hidden");
+      }
+    }
+
+    if (dom.coinHeadsStat) dom.coinHeadsStat.textContent = `Ngửa: ${coinFlipStats.heads} (${headsPct}%)`;
+    if (dom.coinTotalStat) dom.coinTotalStat.textContent = `Tổng: ${coinFlipStats.total} lần`;
+    if (dom.coinTailsStat) dom.coinTailsStat.textContent = `Sấp: ${coinFlipStats.tails} (${tailsPct}%)`;
+    if (dom.coinRatioFill) dom.coinRatioFill.style.width = `${headsPct}%`;
+  }, 1200);
+}
+
+function resetCoinStats() {
+  coinFlipStats.total = 0;
+  coinFlipStats.heads = 0;
+  coinFlipStats.tails = 0;
+  coinFlipStreak = { side: null, count: 0 };
+  if (dom.coinResultText) dom.coinResultText.textContent = "-";
+  if (dom.coinStreakText) dom.coinStreakText.classList.add("hidden");
+  if (dom.coinHeadsStat) dom.coinHeadsStat.textContent = "Ngửa: 0 (0%)";
+  if (dom.coinTotalStat) dom.coinTotalStat.textContent = "Tổng: 0 lần";
+  if (dom.coinTailsStat) dom.coinTailsStat.textContent = "Sấp: 0 (0%)";
+  if (dom.coinRatioFill) dom.coinRatioFill.style.width = "50%";
+  showToast("Đã đặt lại thống kê tung xu!");
+}
+
+let autoBingoTimer = null;
+
+function initBingoGrid() {
+  const min = Number(dom.bingoMinInput?.value) || 1;
+  const max = Number(dom.bingoMaxInput?.value) || 90;
+  dom.bingoCalledGrid.innerHTML = "";
+  const total = Math.max(1, max - min + 1);
+
+  for (let num = min; num <= max; num += 1) {
+    const cell = document.createElement("div");
+    cell.className = `bingo-cell ${bingoState.called.has(num) ? "called" : ""}`;
+    cell.id = `bingoCell_${num}`;
+    cell.textContent = String(num);
+    dom.bingoCalledGrid.appendChild(cell);
+  }
+
+  if (dom.bingoCalledCount) dom.bingoCalledCount.textContent = String(bingoState.called.size);
+  if (dom.bingoTotalCount) dom.bingoTotalCount.textContent = String(total);
+}
+
+function executeDrawBingo() {
+  const min = Number(dom.bingoMinInput?.value) || 1;
+  const max = Number(dom.bingoMaxInput?.value) || 90;
+  if (min >= max) {
+    showToast("Số bắt đầu phải nhỏ hơn số kết thúc!");
+    stopAutoBingo();
+    return;
+  }
+
+  const uncalled = [];
+  for (let n = min; n <= max; n += 1) {
+    if (!bingoState.called.has(n)) uncalled.push(n);
+  }
+
+  if (!uncalled.length) {
+    showToast("Đã bốc hết tất cả các số trong dải này!");
+    stopAutoBingo();
+    return;
+  }
+
+  audioEngine.ensureReady();
+  audioEngine.playWinVariant("chime");
+
+  const drawn = uncalled[Math.floor(cryptoRandom() * uncalled.length)];
+  bingoState.called.add(drawn);
+  bingoState.current = drawn;
+
+  dom.bingoBallActive.classList.remove("animating");
+  void dom.bingoBallActive.offsetWidth;
+  dom.bingoBallActive.textContent = String(drawn);
+  dom.bingoBallActive.classList.add("animating");
+
+  // Remove previous latest
+  dom.bingoCalledGrid.querySelectorAll(".bingo-cell.latest").forEach((c) => c.classList.remove("latest"));
+
+  const cell = document.querySelector(`#bingoCell_${drawn}`);
+  if (cell) {
+    cell.classList.add("called", "latest");
+    cell.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  if (dom.bingoCalledCount) dom.bingoCalledCount.textContent = String(bingoState.called.size);
+}
+
+function toggleAutoBingo() {
+  if (autoBingoTimer) {
+    stopAutoBingo();
+  } else {
+    startAutoBingo();
+  }
+}
+
+function startAutoBingo() {
+  if (autoBingoTimer) return;
+  executeDrawBingo();
+  autoBingoTimer = setInterval(() => {
+    executeDrawBingo();
+  }, 3000);
+  if (dom.autoBingoButton) {
+    dom.autoBingoButton.classList.add("is-running");
+    dom.autoBingoButton.innerHTML = "<span>⏸ Dừng bốc tự động</span>";
+  }
+  showToast("Đang tự động bốc số mỗi 3 giây!");
+}
+
+function stopAutoBingo() {
+  if (autoBingoTimer) {
+    clearInterval(autoBingoTimer);
+    autoBingoTimer = null;
+  }
+  if (dom.autoBingoButton) {
+    dom.autoBingoButton.classList.remove("is-running");
+    dom.autoBingoButton.innerHTML = "<span>⏱ Bốc tự động (3s)</span>";
+  }
+}
+
+function resetBingo() {
+  stopAutoBingo();
+  bingoState.called.clear();
+  bingoState.current = null;
+  dom.bingoBallActive.textContent = "?";
+  initBingoGrid();
+  showToast("Đã làm mới bảng số Lô tô!");
+}
+
+function copyBingoCalled() {
+  if (!bingoState.called.size) {
+    showToast("Chưa có số nào được gọi!");
+    return;
+  }
+  const arr = Array.from(bingoState.called);
+  const text = `🔢 DANH SÁCH SỐ LÔ TÔ ĐÃ GỌI (${arr.length} số):\n${arr.join(", ")}`;
+  navigator.clipboard.writeText(text).then(() => showToast("Đã sao chép danh sách số đã gọi!"));
+}
+
+/* ==========================================================================
+   WINNER CARD GENERATOR
+   ========================================================================== */
+function openWinnerCardModal(payload = null) {
+  const data = payload || currentWinnerCardPayload || {
+    winnerName: dom.resultWinner.textContent || "Người Chiến Thắng",
+    subtitle: dom.resultSubtitle.textContent || "",
+    wheelTitle: getState().title || "Vòng quay định mệnh TNTY"
+  };
+  currentWinnerCardPayload = data;
+  drawWinnerCardCanvas(data);
+  openModal(dom.winnerCardModal);
+}
+
+function drawWinnerCardCanvas(payload) {
+  const canvas = dom.winnerCardCanvas;
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const width = 1200;
+  const height = 630;
+  canvas.width = width;
+  canvas.height = height;
+
+  // Background Gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+  bgGrad.addColorStop(0, "#160305");
+  bgGrad.addColorStop(0.4, "#2b070d");
+  bgGrad.addColorStop(1, "#120204");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Decorative ambient circles
+  ctx.save();
+  ctx.strokeStyle = "rgba(230, 57, 70, 0.12)";
+  ctx.lineWidth = 2;
+  for (let r = 100; r <= 540; r += 75) {
+    ctx.beginPath();
+    ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Golden Outer Border
+  ctx.save();
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.4)";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(30, 30, width - 60, height - 60);
+  ctx.strokeStyle = "rgba(230, 57, 70, 0.5)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(40, 40, width - 80, height - 80);
+
+  // Corner Accents
+  const cornerSize = 30;
+  ctx.strokeStyle = "#ffd700";
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(25, 25 + cornerSize); ctx.lineTo(25, 25); ctx.lineTo(25 + cornerSize, 25); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(width - 25 - cornerSize, 25); ctx.lineTo(width - 25, 25); ctx.lineTo(width - 25, 25 + cornerSize); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(25, height - 25 - cornerSize); ctx.lineTo(25, height - 25); ctx.lineTo(25 + cornerSize, height - 25); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(width - 25 - cornerSize, height - 25); ctx.lineTo(width - 25, height - 25); ctx.lineTo(width - 25, height - 25 - cornerSize); ctx.stroke();
+  ctx.restore();
+
+  // Header: Club Branding
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillStyle = "#ff4757";
+  ctx.font = "bold 24px 'Lexend', sans-serif";
+  ctx.fillText("❤ CLB TÌNH NGUYỆN TRƯỜNG Y — MAN IN RED ❤", width / 2, 95);
+
+  // Main Title: CHỨC MỪNG CHIẾN THẮNG
+  ctx.fillStyle = "#ffd700";
+  ctx.font = "900 44px 'Lexend', sans-serif";
+  ctx.shadowColor = "rgba(255, 215, 0, 0.4)";
+  ctx.shadowBlur = 15;
+  ctx.fillText("🏆 CHỨC MỪNG CHIẾN THẮNG 🏆", width / 2, 155);
+  ctx.shadowBlur = 0;
+
+  // Winner Card Box in center
+  const boxWidth = 980;
+  const boxHeight = 220;
+  const boxX = (width - boxWidth) / 2;
+  const boxY = 215;
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 20);
+  ctx.fill();
+  ctx.stroke();
+
+  // Winner Name
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 56px 'Lexend', 'Be Vietnam Pro', sans-serif";
+  ctx.shadowColor = "rgba(230, 57, 70, 0.9)";
+  ctx.shadowBlur = 14;
+  const winnerName = payload.winnerName || "Người Chiến Thắng";
+  ctx.fillText(winnerName, width / 2, boxY + 85);
+  ctx.shadowBlur = 0;
+
+  // Subtitle / Wheel / Prize
+  if (payload.subtitle || payload.wheelTitle) {
+    ctx.fillStyle = "#ffd166";
+    ctx.font = "600 25px 'Be Vietnam Pro', sans-serif";
+    const sub = payload.subtitle ? `${payload.wheelTitle ? payload.wheelTitle + " • " : ""}${payload.subtitle}` : payload.wheelTitle || "";
+    ctx.fillText(sub, width / 2, boxY + 155);
+  }
+
+  // Footer: Timestamp & Verification Badge
+  ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+  ctx.font = "500 18px 'Be Vietnam Pro', sans-serif";
+  const dateStr = payload.dateText || new Date().toLocaleString("vi-VN");
+  ctx.fillText(`Thời gian: ${dateStr} • Bánh xe định mệnh TNTY`, width / 2, 490);
+
+  ctx.fillStyle = "#38bdf8";
+  ctx.font = "bold 16px 'Lexend', sans-serif";
+  ctx.fillText("🌟 FAIR RANDOM DRAW • VERIFIED WITH CRYPTO RNG 🌟", width / 2, 540);
+}
+
+function downloadWinnerCardPng() {
+  const canvas = dom.winnerCardCanvas;
+  if (!canvas) return;
+  const dataUrl = canvas.toDataURL("image/png");
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = `thiep-vinh-danh-tnty-${Date.now()}.png`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  showToast("Đã tải ảnh thiệp vinh danh về máy!");
+}
+
+function copyWinnerCardImage() {
+  const canvas = dom.winnerCardCanvas;
+  if (!canvas) return;
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    try {
+      navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob })
+      ]).then(() => {
+        showToast("Đã sao chép ảnh thiệp vào bộ nhớ tạm!");
+      }).catch(() => {
+        showToast("Trình duyệt không hỗ trợ sao chép ảnh trực tiếp.");
+      });
+    } catch {
+      showToast("Trình duyệt không hỗ trợ sao chép ảnh trực tiếp.");
+    }
+  });
 }
 
 function applySpinOnlyState(state) {
@@ -1766,8 +3099,10 @@ function addEntryFromInput() {
     .map((label) => label.slice(0, 100));
   if (!labels.length) return;
   stateManager.update((draft) => {
-    labels.forEach((label) => {
-      draft.entries.push(createEntry(label));
+    updateActiveWheelEntries(draft, (list) => {
+      labels.forEach((label) => {
+        list.push(createEntry(label));
+      });
     });
   });
   dom.addEntryInput.value = "";
@@ -1792,15 +3127,18 @@ function parseAndApplyBulkPaste() {
   }
 
   const state = getState();
-  const existingLabels = new Set(state.entries.map((entry) => entry.label.toLowerCase()));
+  const currentEntries = getActiveWheelEntries(state);
+  const existingLabels = new Set(currentEntries.map((entry) => entry.label.toLowerCase()));
   const duplicates = parsed.filter((item) => existingLabels.has(item.label.toLowerCase()));
 
   stateManager.update((draft) => {
-    parsed.forEach((item) => {
-      draft.entries.push(createEntry(item.label, {
-        weight: item.weight ?? 1,
-        sliceColor: item.sliceColor ?? null
-      }));
+    updateActiveWheelEntries(draft, (list) => {
+      parsed.forEach((item) => {
+        list.push(createEntry(item.label, {
+          weight: item.weight ?? 1,
+          sliceColor: item.sliceColor ?? null
+        }));
+      });
     });
   });
 
@@ -2580,14 +3918,22 @@ function bindEvents() {
   dom.shuffleEntriesButton.addEventListener("click", () => {
     if (getState().settings.spinOnly) return;
     stateManager.update((draft) => {
-      draft.entries = shuffleArray(draft.entries);
+      updateActiveWheelEntries(draft, (list) => {
+        const shuffled = shuffleArray(list);
+        list.length = 0;
+        list.push(...shuffled);
+      });
     }, { reason: "entry-shuffle" });
   });
 
   dom.sortEntriesButton.addEventListener("click", () => {
     if (getState().settings.spinOnly) return;
     stateManager.update((draft) => {
-      draft.entries = sortEntriesAZ(draft.entries);
+      updateActiveWheelEntries(draft, (list) => {
+        const sorted = sortEntriesAZ(list);
+        list.length = 0;
+        list.push(...sorted);
+      });
     }, { reason: "entry-sort" });
   });
 
@@ -2601,7 +3947,9 @@ function bindEvents() {
     });
     if (!confirmed) return;
     stateManager.update((draft) => {
-      draft.entries = [];
+      updateActiveWheelEntries(draft, (list) => {
+        list.length = 0;
+      });
     }, { reason: "entry-clear" });
   });
 
@@ -2706,6 +4054,11 @@ function bindEvents() {
   dom.resetEliminationsButton.addEventListener("click", () => {
     if (getState().settings.spinOnly) return;
     stateManager.update((draft) => {
+      updateActiveWheelEntries(draft, (list) => {
+        list.forEach((entry) => {
+          entry.eliminated = false;
+        });
+      });
       draft.entries.forEach((entry) => {
         entry.eliminated = false;
       });
@@ -3100,9 +4453,15 @@ function bindEvents() {
     const winnerId = currentWinnerEntryId;
     if (!winnerId) return;
     stateManager.update((draft) => {
-      const found = draft.entries.find((entry) => entry.id === winnerId);
-      if (found) {
-        found.eliminated = true;
+      updateActiveWheelEntries(draft, (list) => {
+        const found = list.find((entry) => entry.id === winnerId);
+        if (found) {
+          found.eliminated = true;
+        }
+      });
+      const foundInSingle = draft.entries.find((entry) => entry.id === winnerId);
+      if (foundInSingle) {
+        foundInSingle.eliminated = true;
       }
     }, { reason: "entry-eliminate" });
     closeModal();
@@ -3176,6 +4535,217 @@ function bindEvents() {
     }
 
   });
+
+  // --- MODE NAVIGATION ---
+  dom.modeSingleWheelBtn?.addEventListener("click", () => {
+    stateManager.update((draft) => {
+      draft.multiWheel.enabled = false;
+    }, { reason: "switch-single-wheel" });
+  });
+
+  dom.modeMultiWheelBtn?.addEventListener("click", () => {
+    stateManager.update((draft) => {
+      draft.multiWheel.enabled = true;
+    }, { reason: "switch-multi-wheel" });
+  });
+
+  dom.modeBatchDrawBtn?.addEventListener("click", openBatchDrawModal);
+  dom.modeTeamGenBtn?.addEventListener("click", openTeamGeneratorModal);
+  dom.modeQuickToolsBtn?.addEventListener("click", openQuickToolsModal);
+
+  // --- MULTI-WHEEL CONTROLS ---
+  dom.spinAllWheelsBtn?.addEventListener("click", performMultiSpin);
+  dom.multiWheelPresetBtn?.addEventListener("click", openMultiPresetModal);
+  dom.closeMultiPresetButton?.addEventListener("click", closeModal);
+
+  dom.multiWheelCountSelect?.addEventListener("change", (e) => {
+    const nextCount = clamp(Number(e.target.value) || 2, 2, 4);
+    stateManager.update((draft) => {
+      draft.multiWheel.wheelCount = nextCount;
+      if (draft.multiWheel.activeWheelIndex >= nextCount) {
+        draft.multiWheel.activeWheelIndex = 0;
+      }
+    }, { reason: "multiwheel-count-change" });
+  });
+
+  dom.multiWheelTabsNav?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".multi-tab-btn");
+    if (!btn) return;
+    const idx = Number(btn.dataset.wheelIdx) || 0;
+    stateManager.update((draft) => {
+      draft.multiWheel.activeWheelIndex = idx;
+    }, { reason: "multiwheel-tab-switch" });
+  });
+
+  dom.multiWheelTitleInput?.addEventListener("input", (e) => {
+    const title = e.target.value;
+    stateManager.update((draft) => {
+      const idx = draft.multiWheel.activeWheelIndex || 0;
+      if (draft.multiWheel.wheels[idx]) {
+        draft.multiWheel.wheels[idx].title = title;
+      }
+    }, { reason: "multiwheel-title-edit" });
+  });
+
+  dom.multiWheelGrid?.addEventListener("click", (e) => {
+    const spinBtn = e.target.closest("[data-spin-wheel]");
+    if (spinBtn) {
+      const idx = Number(spinBtn.dataset.spinWheel) || 0;
+      performSingleSubSpin(idx);
+      return;
+    }
+    const editBtn = e.target.closest("[data-edit-wheel]");
+    if (editBtn) {
+      const idx = Number(editBtn.dataset.editWheel) || 0;
+      stateManager.update((draft) => {
+        draft.multiWheel.activeWheelIndex = idx;
+      }, { reason: "multiwheel-tab-switch" });
+      dom.addEntryInput?.focus();
+      return;
+    }
+  });
+
+  dom.multiSpinAgainButton?.addEventListener("click", () => {
+    closeModal();
+    performMultiSpin();
+  });
+
+  dom.copyMultiResultButton?.addEventListener("click", () => {
+    if (!currentMultiWheelResults.length) return;
+    const text = currentMultiWheelResults.map((r) => `${r.wheelTitle}: ${r.winnerEntry.label}`).join("\n");
+    navigator.clipboard.writeText(text).then(() => showToast("Đã sao chép kết quả!"));
+  });
+
+  dom.generateMultiWinnerCardButton?.addEventListener("click", () => {
+    closeModal();
+    openWinnerCardModal(currentWinnerCardPayload);
+  });
+
+  dom.closeMultiResultButton?.addEventListener("click", closeModal);
+
+  // --- BATCH DRAW CONTROLS ---
+  dom.startBatchDrawButton?.addEventListener("click", executeBatchDraw);
+  dom.batchDrawCountInput?.addEventListener("input", (e) => {
+    if (dom.batchDrawCountOutput) {
+      dom.batchDrawCountOutput.value = e.target.value;
+    }
+  });
+
+  dom.batchDrawModal?.querySelectorAll(".quick-chip")?.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const count = chip.dataset.count;
+      if (count === "all") {
+        const available = activeEntries(getState()).length || 10;
+        dom.batchDrawCountInput.value = String(Math.min(50, available));
+      } else {
+        dom.batchDrawCountInput.value = count;
+      }
+      if (dom.batchDrawCountOutput) {
+        dom.batchDrawCountOutput.value = dom.batchDrawCountInput.value;
+      }
+    });
+  });
+
+  dom.copyBatchResultsButton?.addEventListener("click", copyBatchResults);
+  dom.generateBatchWinnerCardButton?.addEventListener("click", () => {
+    if (!currentBatchWinners.length) return;
+    closeModal();
+    openWinnerCardModal({
+      winnerName: currentBatchWinners[0].label,
+      subtitle: "Quán Quân Rút Thăm May Mắn",
+      wheelTitle: "CLB Tình Nguyện Trường Y - Man in Red"
+    });
+  });
+  dom.closeBatchDrawButton?.addEventListener("click", closeModal);
+
+  // --- TEAM GENERATOR CONTROLS ---
+  dom.divideTeamsButton?.addEventListener("click", executeDivideTeams);
+  dom.teamDivideModeSelect?.addEventListener("change", (e) => {
+    const isByMembers = e.target.value === "by_members";
+    dom.teamCountControlWrap?.classList.toggle("hidden", isByMembers);
+    dom.teamPerCountControlWrap?.classList.toggle("hidden", !isByMembers);
+    updateTeamStatsSummary();
+    executeDivideTeams();
+  });
+  dom.teamCountSelect?.addEventListener("change", () => {
+    updateTeamStatsSummary();
+    executeDivideTeams();
+  });
+  dom.teamPerCountSelect?.addEventListener("change", () => {
+    updateTeamStatsSummary();
+    executeDivideTeams();
+  });
+  dom.teamNamingSelect?.addEventListener("change", executeDivideTeams);
+  dom.teamCustomMembersInput?.addEventListener("input", updateTeamStatsSummary);
+  dom.teamSyncWheelBtn?.addEventListener("click", () => {
+    const entries = activeEntries(getState()).map((e) => e.label).join("\n");
+    if (dom.teamCustomMembersInput) dom.teamCustomMembersInput.value = entries;
+    updateTeamStatsSummary();
+    showToast("Đã đồng bộ thành viên từ vòng quay!");
+  });
+  dom.teamAddAnimeSampleBtn?.addEventListener("click", () => {
+    if (dom.teamCustomMembersInput) dom.teamCustomMembersInput.value = ANIME_SAMPLE_MEMBERS.join("\n");
+    updateTeamStatsSummary();
+    showToast("Đã nạp danh sách nhân vật Anime!");
+  });
+  dom.teamClearMembersBtn?.addEventListener("click", () => {
+    if (dom.teamCustomMembersInput) dom.teamCustomMembersInput.value = "";
+    updateTeamStatsSummary();
+    showToast("Đã xóa trắng danh sách!");
+  });
+  dom.copyTeamsButton?.addEventListener("click", copyTeamsList);
+  dom.exportTeamImageButton?.addEventListener("click", exportTeamDiagramImage);
+  dom.closeTeamGenButton?.addEventListener("click", closeModal);
+  dom.closeTeamGenModalBtn?.addEventListener("click", closeModal);
+
+  // --- QUICK TOOLS CONTROLS ---
+  dom.tabDiceBtn?.addEventListener("click", () => switchQuickToolTab("dice"));
+  dom.tabCoinBtn?.addEventListener("click", () => switchQuickToolTab("coin"));
+  dom.tabBingoBtn?.addEventListener("click", () => switchQuickToolTab("bingo"));
+  dom.rollDiceButton?.addEventListener("click", executeRollDice);
+  dom.diceCountSelect?.addEventListener("change", executeRollDice);
+  dom.toolDiceSection?.querySelectorAll(".quick-dice-chips .chip-btn")?.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (dom.diceCountSelect && btn.dataset.diceSet) {
+        dom.diceCountSelect.value = btn.dataset.diceSet;
+        executeRollDice();
+      }
+    });
+  });
+
+  dom.flipCoinButton?.addEventListener("click", executeFlipCoin);
+  dom.coinSceneWrap?.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    executeFlipCoin();
+  });
+  dom.resetCoinStatsBtn?.addEventListener("click", resetCoinStats);
+
+  dom.drawBingoButton?.addEventListener("click", executeDrawBingo);
+  dom.autoBingoButton?.addEventListener("click", toggleAutoBingo);
+  dom.resetBingoButton?.addEventListener("click", resetBingo);
+  dom.copyBingoCalledBtn?.addEventListener("click", copyBingoCalled);
+  dom.toolBingoSection?.querySelectorAll(".bingo-quick-ranges .chip-btn")?.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (dom.bingoMaxInput && btn.dataset.rangeMax) {
+        dom.bingoMaxInput.value = btn.dataset.rangeMax;
+        resetBingo();
+      }
+    });
+  });
+  dom.closeQuickToolsButton?.addEventListener("click", () => {
+    stopAutoBingo();
+    closeModal();
+  });
+
+  // --- WINNER CARD CONTROLS ---
+  dom.generateWinnerCardButton?.addEventListener("click", () => {
+    closeModal();
+    openWinnerCardModal();
+  });
+  dom.downloadWinnerCardButton?.addEventListener("click", downloadWinnerCardPng);
+  dom.copyWinnerCardButton?.addEventListener("click", copyWinnerCardImage);
+  dom.closeWinnerCardButton?.addEventListener("click", closeModal);
+  dom.closeWinnerCardModalBtn?.addEventListener("click", closeModal);
 
   mediaDarkMode.addEventListener("change", () => {
     const userSelectedMode = safeLocalStorageGet(STORAGE_KEYS.themeMode);
@@ -3281,8 +4851,49 @@ async function bootstrap() {
     initialState.theme.pageTheme = "light";
     stateManager.setState(initialState, { reason: "tnty-migration", skipHistory: true });
   }
-  // Older builds shipped with sample names (Noah, Olivia, ...) as the default
-  // wheel; clear them from stored state so the app starts empty instead.
+
+  // Tự động chuyển đổi tên người thật sang nhân vật anime
+  const REAL_NAME_PATTERN = /(Việt Thanh|Minh Anh|Tuấn Kiệt|Bảo Châu|Hoàng Nam|Gia Hân|Đức Huy|Khánh Linh|Noah|Olivia|Sofia|Isla|Hugo)/i;
+  let didMigrateAnime = false;
+  if (initialState.entries.some((e) => REAL_NAME_PATTERN.test(e.label))) {
+    initialState.entries = [
+      createEntry("Luffy 👒"),
+      createEntry("Zoro ⚔"),
+      createEntry("Sanji 🍳"),
+      createEntry("Nami 🍊"),
+      createEntry("Naruto 🍥"),
+      createEntry("Sasuke ⚡"),
+      createEntry("Conan 👓"),
+      createEntry("Tanjiro 🌊")
+    ];
+    didMigrateAnime = true;
+  }
+  if (initialState.multiWheel?.wheels) {
+    initialState.multiWheel.wheels.forEach((wheel, wIdx) => {
+      if (wheel.entries && wheel.entries.some((e) => REAL_NAME_PATTERN.test(e.label))) {
+        if (wIdx === 0) {
+          wheel.title = "Ai? (Nhân vật)";
+          wheel.entries = [
+            createEntry("Luffy 👒"),
+            createEntry("Zoro ⚔"),
+            createEntry("Sanji 🍳"),
+            createEntry("Naruto 🍥"),
+            createEntry("Sasuke ⚡"),
+            createEntry("Goku 🔥")
+          ];
+        }
+        didMigrateAnime = true;
+      }
+      if (wheel.title && wheel.title.includes("Thành viên")) {
+        wheel.title = "Ai? (Nhân vật)";
+        didMigrateAnime = true;
+      }
+    });
+  }
+  if (didMigrateAnime) {
+    stateManager.setState(initialState, { reason: "anime-characters-migration", skipHistory: true });
+  }
+
   const legacySampleLabels = [...TEAM_PICKER_NAMES].sort().join(" ");
   const storedLabels = initialState.entries.map((entry) => entry.label).sort().join(" ");
   if (!sharePayload && initialState.entries.length === TEAM_PICKER_NAMES.length && storedLabels === legacySampleLabels) {

@@ -176,10 +176,35 @@
       </div>
     </header>
 
+    <nav class="mode-navigation" aria-label="Chế độ quay và công cụ">
+      <button id="modeSingleWheelBtn" class="mode-nav-btn active" type="button" data-mode="single">
+        <span class="mode-icon">🎡</span>
+        <span data-i18n="mode_single_wheel">1 Bánh xe</span>
+      </button>
+      <button id="modeMultiWheelBtn" class="mode-nav-btn" type="button" data-mode="multi">
+        <span class="mode-icon">🎡</span>
+        <span data-i18n="mode_multi_wheel">Nhiều vòng quay</span>
+      </button>
+      <button id="modeBatchDrawBtn" class="mode-nav-btn" type="button" data-mode="batch">
+        <span class="mode-icon">⚡</span>
+        <span data-i18n="mode_batch_draw">Rút hàng loạt</span>
+      </button>
+      <button id="modeTeamGenBtn" class="mode-nav-btn" type="button" data-mode="team">
+        <span class="mode-icon">👥</span>
+        <span data-i18n="mode_team_generator">Chia nhóm</span>
+      </button>
+      <button id="modeQuickToolsBtn" class="mode-nav-btn" type="button" data-mode="tools">
+        <span class="mode-icon">🎲</span>
+        <span data-i18n="mode_quick_tools">Công cụ nhanh</span>
+      </button>
+    </nav>
+
     <main class="main-layout" role="main">
       <section class="wheel-section" data-i18n-aria-label="wheel_section_aria">
         <h1 class="sr-only" data-i18n="app_heading">Spin the Wheel — Spin to Decide</h1>
-        <div class="wheel-wrap">
+        
+        <!-- SINGLE WHEEL MODE WRAP -->
+        <div id="singleWheelWrap" class="wheel-wrap">
           <div class="wheel-badges">
             <span id="weightedBadge" class="mode-badge hidden" data-i18n="weighted_badge">⚖ Weighted</span>
             <span id="seedBadge" class="mode-badge hidden" data-i18n="seed_badge">🔁 Seeded</span>
@@ -193,6 +218,32 @@
           <p id="firstRunHint" class="hint hidden" data-i18n="first_run_hint"></p>
           <p class="club-slogan">❤ Man in Red — Tình Nguyện Trường Y</p>
         </div>
+
+        <!-- MULTI-WHEEL MODE WRAP -->
+        <div id="multiWheelWrap" class="multi-wheel-wrap hidden">
+          <div class="multi-wheel-toolbar">
+            <div class="multi-wheel-controls-left">
+              <div class="multi-wheel-count-selector">
+                <label for="multiWheelCountSelect" data-i18n="wheel_count">Số bánh xe</label>
+                <select id="multiWheelCountSelect" class="styled-select">
+                  <option value="2">2 Bánh xe</option>
+                  <option value="3">3 Bánh xe</option>
+                  <option value="4">4 Bánh xe</option>
+                </select>
+              </div>
+              <button id="multiWheelPresetBtn" class="ghost-btn" type="button" data-i18n="multi_presets">Mẫu phối hợp</button>
+            </div>
+            <button id="spinAllWheelsBtn" class="spin-all-btn" type="button" data-i18n-aria-label="spin_all_aria">
+              <span class="spin-all-icon">🚀</span>
+              <span data-i18n="spin_all">QUAY TẤT CẢ</span>
+            </button>
+          </div>
+
+          <div id="multiWheelGrid" class="multi-wheel-grid grid-2">
+            <!-- Rendered dynamically -->
+          </div>
+          <p class="club-slogan">❤ Man in Red — Tình Nguyện Trường Y</p>
+        </div>
       </section>
 
       <aside class="side-panel" data-i18n-aria-label="controls_panel_aria">
@@ -203,6 +254,17 @@
         </nav>
 
         <section id="entriesTab" class="panel-tab active" role="region" data-i18n-aria-label="entries_tab">
+          <!-- MULTI-WHEEL SUB TABS -->
+          <div id="multiWheelTabsNav" class="multi-wheel-nav-tabs hidden">
+            <button class="multi-tab-btn active" type="button" data-wheel-idx="0">Vòng 1</button>
+            <button class="multi-tab-btn" type="button" data-wheel-idx="1">Vòng 2</button>
+            <button class="multi-tab-btn hidden" type="button" data-wheel-idx="2">Vòng 3</button>
+            <button class="multi-tab-btn hidden" type="button" data-wheel-idx="3">Vòng 4</button>
+          </div>
+          <div id="multiWheelTitleEdit" class="multi-wheel-title-edit hidden">
+            <input id="multiWheelTitleInput" type="text" maxlength="40" placeholder="Tiêu đề vòng quay...">
+          </div>
+
           <div class="panel-inline-row hidden" aria-hidden="true">
             <button id="undoButton" class="ghost-btn" type="button" data-i18n="undo" tabindex="-1"></button>
             <button id="redoButton" class="ghost-btn" type="button" data-i18n="redo" tabindex="-1"></button>
@@ -456,9 +518,335 @@
         <p id="resultSubtitle" class="winner-subtitle hidden"></p>
         <div class="modal-actions">
           <button id="spinAgainButton" class="accent-btn" type="button" data-i18n="spin_again"></button>
+          <button id="generateWinnerCardButton" class="ghost-btn" type="button" data-i18n="winner_card_btn">🏆 Tạo thiệp vinh danh</button>
           <button id="removeWinnerButton" class="ghost-btn danger-btn hidden" type="button" data-i18n="remove_winner"></button>
           <button id="closeResultButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
+      </div>
+    </section>
+
+    <!-- MULTI-WHEEL RESULT MODAL -->
+    <section id="multiWheelResultModal" class="modal result-modal hidden" role="dialog" aria-modal="true" aria-labelledby="multiWheelResultTitle">
+      <div class="modal-card result-card">
+        <h2 id="multiWheelResultTitle" data-i18n="multi_wheel_result_title">🎉 KẾT QUẢ QUAY NHIỀU VÒNG</h2>
+        <div id="multiWheelResultList" class="multi-result-list"></div>
+        <div id="multiWheelResultCombined" class="multi-result-combined"></div>
+        <div class="modal-actions">
+          <button id="multiSpinAgainButton" class="accent-btn" type="button" data-i18n="spin_all">🚀 QUAY LẠI TẤT CẢ</button>
+          <button id="copyMultiResultButton" class="ghost-btn" type="button">📋 Sao chép kết quả</button>
+          <button id="generateMultiWinnerCardButton" class="ghost-btn" type="button" data-i18n="winner_card_btn">🏆 Tạo thiệp vinh danh</button>
+          <button id="closeMultiResultButton" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATCH DRAW MODAL -->
+    <section id="batchDrawModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="batchDrawTitle">
+      <div class="modal-card">
+        <div class="panel-topline">
+          <h2 id="batchDrawTitle" data-i18n="batch_draw_title">⚡ Rút thăm hàng loạt</h2>
+          <button id="closeBatchDrawButton" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+        <div class="batch-config-grid">
+          <label for="batchDrawCountInput"><span data-i18n="batch_draw_count">Số lượng người rút</span>: <output id="batchDrawCountOutput">3</output></label>
+          <input id="batchDrawCountInput" type="range" min="1" max="30" step="1" value="3">
+          <div class="quick-count-chips">
+            <button class="chip-btn" type="button" data-count="1">+1</button>
+            <button class="chip-btn" type="button" data-count="3">+3</button>
+            <button class="chip-btn" type="button" data-count="5">+5</button>
+            <button class="chip-btn" type="button" data-count="10">+10</button>
+            <button id="batchCountAllBtn" class="chip-btn" type="button">Tất cả</button>
+          </div>
+          
+          <label class="checkbox-line">
+            <input id="batchNoDuplicateToggle" type="checkbox" checked>
+            <span data-i18n="batch_draw_no_duplicate">Không lặp lại (Mỗi người 1 giải)</span>
+          </label>
+          <label class="checkbox-line">
+            <input id="batchSequentialToggle" type="checkbox">
+            <span data-i18n="batch_draw_sequential">Quay tuần tự kịch tính</span>
+          </label>
+        </div>
+
+        <button id="startBatchDrawButton" class="spin-all-btn" type="button" style="width: 100%; justify-content: center;">
+          <span>⚡ BẮT ĐẦU RÚT THĂM</span>
+        </button>
+
+        <div id="batchResultsWrap" class="batch-results-wrap hidden">
+          <h3 data-i18n="batch_draw_results">🏆 Bảng vinh danh người trúng thưởng</h3>
+          <div id="batchPodiumGrid" class="podium-grid"></div>
+          <div id="batchWinnersList" class="batch-winners-list"></div>
+          <div class="modal-actions" style="margin-top: var(--space-3);">
+            <button id="copyBatchResultsButton" class="ghost-btn" type="button">📋 Sao chép danh sách</button>
+            <button id="generateBatchWinnerCardButton" class="ghost-btn" type="button" data-i18n="winner_card_btn">🏆 Tạo thiệp vinh danh</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEAM GENERATOR MODAL -->
+    <section id="teamGeneratorModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="teamGenTitle">
+      <div class="modal-card" style="max-width: 52rem;">
+        <div class="panel-topline">
+          <h2 id="teamGenTitle" data-i18n="team_gen_title">👥 Chia nhóm & Phân đội ngẫu nhiên</h2>
+          <button id="closeTeamGenButton" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+        
+        <!-- STATS & INFO BAR -->
+        <div class="team-summary-banner" id="teamSummaryBanner">
+          <div class="team-stat-item">
+            <span class="team-stat-label">Tổng thành viên</span>
+            <span class="team-stat-val" id="teamMemberCountVal">0</span>
+          </div>
+          <div class="team-stat-divider">➔</div>
+          <div class="team-stat-item">
+            <span class="team-stat-label">Số đội phân chia</span>
+            <span class="team-stat-val" id="teamCountVal">3</span>
+          </div>
+          <div class="team-stat-divider">➔</div>
+          <div class="team-stat-item">
+            <span class="team-stat-label">Dự kiến mỗi đội</span>
+            <span class="team-stat-val" id="teamPerGroupVal">~0 người</span>
+          </div>
+        </div>
+
+        <!-- CONFIGURATION CONTROLS -->
+        <div class="team-config-grid">
+          <div>
+            <label for="teamDivideModeSelect" style="font-weight: 700; font-size: var(--text-xs); color: var(--text-secondary);">Chế độ chia</label>
+            <select id="teamDivideModeSelect" class="styled-select" style="width: 100%;">
+              <option value="by_teams" selected>Chia theo Số lượng đội</option>
+              <option value="by_members">Chia theo Số người mỗi đội</option>
+            </select>
+          </div>
+          <div id="teamCountControlWrap">
+            <label for="teamCountSelect" style="font-weight: 700; font-size: var(--text-xs); color: var(--text-secondary);" data-i18n="team_gen_count">Số lượng đội</label>
+            <select id="teamCountSelect" class="styled-select" style="width: 100%;">
+              <option value="2">2 Đội</option>
+              <option value="3" selected>3 Đội</option>
+              <option value="4">4 Đội</option>
+              <option value="5">5 Đội</option>
+              <option value="6">6 Đội</option>
+              <option value="7">7 Đội</option>
+              <option value="8">8 Đội</option>
+            </select>
+          </div>
+          <div id="teamPerCountControlWrap" class="hidden">
+            <label for="teamPerCountSelect" style="font-weight: 700; font-size: var(--text-xs); color: var(--text-secondary);">Số người / đội</label>
+            <select id="teamPerCountSelect" class="styled-select" style="width: 100%;">
+              <option value="2">2 Người / đội</option>
+              <option value="3">3 Người / đội</option>
+              <option value="4" selected>4 Người / đội</option>
+              <option value="5">5 Người / đội</option>
+              <option value="6">6 Người / đội</option>
+            </select>
+          </div>
+          <div>
+            <label for="teamNamingSelect" style="font-weight: 700; font-size: var(--text-xs); color: var(--text-secondary);" data-i18n="team_gen_naming">Phong cách tên đội</label>
+            <select id="teamNamingSelect" class="styled-select" style="width: 100%;">
+              <option value="tnty" data-i18n="team_gen_naming_tnty" selected>❤ CLB Tình Nguyện Trường Y</option>
+              <option value="anime">👒 Băng Mũ Rơm & Anime</option>
+              <option value="color" data-i18n="team_gen_naming_color">🎨 Màu sắc nổi bật</option>
+              <option value="number" data-i18n="team_gen_naming_number">🔢 Đội số (1, 2, 3...)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- CUSTOM MEMBERS COLLAPSIBLE PANEL -->
+        <details class="team-members-accordion" id="teamMembersAccordion">
+          <summary class="team-members-summary">
+            <span>📝 Xem & Chỉnh sửa danh sách thành viên (<span id="teamListCountBadge">0</span>)</span>
+            <span class="accordion-arrow">▼</span>
+          </summary>
+          <div class="team-members-input-body">
+            <textarea id="teamCustomMembersInput" rows="3" placeholder="Nhập hoặc dán tên thành viên (mỗi dòng một tên hoặc ngăn cách bằng dấu phẩy)..."></textarea>
+            <div class="team-members-quick-btns">
+              <button id="teamSyncWheelBtn" class="ghost-btn" type="button">📥 Lấy từ Vòng quay</button>
+              <button id="teamAddAnimeSampleBtn" class="ghost-btn" type="button">✨ 10 Nhân vật Anime</button>
+              <button id="teamClearMembersBtn" class="ghost-btn danger-btn" type="button">🧹 Xóa trắng</button>
+            </div>
+          </div>
+        </details>
+
+        <button id="divideTeamsButton" class="spin-all-btn team-divide-btn" type="button">
+          <span class="spin-all-icon">⚡</span>
+          <span>CHIA NHÓM NGAY</span>
+        </button>
+
+        <!-- TEAMS GRID -->
+        <div id="teamsGrid" class="teams-grid"></div>
+
+        <!-- ACTIONS -->
+        <div class="modal-actions" style="margin-top: var(--space-4); justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: var(--space-2); flex-wrap: wrap;">
+            <button id="copyTeamsButton" class="ghost-btn" type="button">📋 Sao chép danh sách</button>
+            <button id="exportTeamImageButton" class="ghost-btn" type="button">🖼 Tải ảnh sơ đồ (PNG)</button>
+          </div>
+          <button id="closeTeamGenModalBtn" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK TOOLS MODAL (DICE, COIN, BINGO) -->
+    <section id="quickToolsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="quickToolsTitle">
+      <div class="modal-card" style="max-width: 44rem;">
+        <div class="panel-topline">
+          <h2 id="quickToolsTitle" data-i18n="quick_tools_title">🎲 Bộ công cụ ngẫu nhiên tức thì</h2>
+          <button id="closeQuickToolsButton" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+
+        <nav class="quick-tools-tabs">
+          <button id="tabDiceBtn" class="quick-tool-tab active" type="button" data-i18n="dice_roller">Xúc xắc 3D</button>
+          <button id="tabCoinBtn" class="quick-tool-tab" type="button" data-i18n="coin_flipper">Tung đồng xu 3D</button>
+          <button id="tabBingoBtn" class="quick-tool-tab" type="button" data-i18n="bingo_picker">Bốc số Lô tô</button>
+        </nav>
+
+        <!-- DICE TOOL -->
+        <div id="toolDiceSection" class="quick-tool-section">
+          <div class="quick-tool-toolbar">
+            <div style="display: flex; align-items: center; gap: var(--space-2);">
+              <label for="diceCountSelect" data-i18n="dice_count">Số lượng:</label>
+              <select id="diceCountSelect" class="styled-select">
+                <option value="1">1 Viên</option>
+                <option value="2" selected>2 Viên</option>
+                <option value="3">3 Viên</option>
+                <option value="4">4 Viên</option>
+                <option value="5">5 Viên</option>
+                <option value="6">6 Viên</option>
+              </select>
+            </div>
+            <div class="quick-dice-chips">
+              <button class="chip-btn" type="button" data-dice-set="1">1🎲</button>
+              <button class="chip-btn" type="button" data-dice-set="2">2🎲</button>
+              <button class="chip-btn" type="button" data-dice-set="3">3🎲</button>
+              <button class="chip-btn" type="button" data-dice-set="6">6🎲</button>
+            </div>
+          </div>
+
+          <div id="diceTray" class="dice-tray"></div>
+
+          <div class="dice-score-banner">
+            <span class="dice-score-label">Tổng điểm:</span>
+            <span id="diceTotalDisplay" class="dice-total-display">-</span>
+            <span id="diceBreakdownDisplay" class="dice-breakdown-display"></span>
+          </div>
+
+          <button id="rollDiceButton" class="spin-all-btn" type="button" data-i18n="dice_roll_btn">
+            <span class="spin-all-icon">🎲</span>
+            <span>LẮC XÚC XẮC</span>
+          </button>
+        </div>
+
+        <!-- COIN TOOL -->
+        <div id="toolCoinSection" class="quick-tool-section hidden">
+          <div class="coin-scene" id="coinSceneWrap" title="Bấm vào đồng xu để tung!">
+            <div id="coinObject" class="coin-object">
+              <div class="coin-side coin-front">
+                <span class="coin-side-icon">👑</span>
+                <span class="coin-side-text">NGỬA</span>
+              </div>
+              <div class="coin-side coin-back">
+                <span class="coin-side-icon">⭐</span>
+                <span class="coin-side-text">SẤP</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="coin-result-banner">
+            <p id="coinResultText" class="coin-result-text">-</p>
+            <p id="coinStreakText" class="coin-streak-badge hidden">🔥 Chuỗi 0 lần liên tiếp</p>
+          </div>
+
+          <div class="coin-stats-bar-wrap">
+            <div class="coin-stats-info">
+              <span id="coinHeadsStat">Ngửa: 0 (0%)</span>
+              <span id="coinTotalStat">Tổng: 0 lần</span>
+              <span id="coinTailsStat">Sấp: 0 (0%)</span>
+            </div>
+            <div class="coin-ratio-track">
+              <div id="coinRatioFill" class="coin-ratio-fill" style="width: 50%;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: var(--space-2);">
+            <button id="flipCoinButton" class="spin-all-btn" type="button" data-i18n="coin_flip_btn">
+              <span class="spin-all-icon">🪙</span>
+              <span>TUNG ĐỒNG XU</span>
+            </button>
+            <button id="resetCoinStatsBtn" class="ghost-btn" type="button" title="Đặt lại thống kê">🔄</button>
+          </div>
+        </div>
+
+        <!-- BINGO / NUMBER PICKER TOOL -->
+        <div id="toolBingoSection" class="quick-tool-section hidden" style="width: 100%;">
+          <div class="bingo-hero-stage">
+            <div class="bingo-cage-visual">
+              <div id="bingoBallActive" class="bingo-ball-active">?</div>
+            </div>
+            
+            <div class="bingo-config-bar">
+              <label for="bingoMinInput">Từ</label>
+              <input id="bingoMinInput" type="number" value="1" min="1" max="999" class="styled-input-num">
+              <label for="bingoMaxInput">Đến</label>
+              <input id="bingoMaxInput" type="number" value="90" min="2" max="999" class="styled-input-num">
+              <div class="bingo-quick-ranges">
+                <button class="chip-btn" type="button" data-range-max="30">1-30</button>
+                <button class="chip-btn" type="button" data-range-max="50">1-50</button>
+                <button class="chip-btn" type="button" data-range-max="90">1-90</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bingo-controls-row">
+            <button id="drawBingoButton" class="spin-all-btn" type="button" data-i18n="bingo_draw_btn">
+              <span class="spin-all-icon">🔢</span>
+              <span>BỐC SỐ TIẾP THEO</span>
+            </button>
+            <button id="autoBingoButton" class="ghost-btn auto-bingo-btn" type="button">
+              <span>⏱ Bốc tự động (3s)</span>
+            </button>
+            <button id="resetBingoButton" class="ghost-btn danger-btn" type="button" data-i18n="bingo_reset">
+              <span>🔄 Làm mới</span>
+            </button>
+          </div>
+
+          <div class="bingo-board-container">
+            <div class="bingo-board-header">
+              <span><strong>Các số đã gọi</strong> (<span id="bingoCalledCount">0</span>/<span id="bingoTotalCount">90</span>)</span>
+              <button id="copyBingoCalledBtn" class="ghost-btn" type="button" style="padding: 0.2rem 0.5rem; font-size: var(--text-xs);">📋 Sao chép</button>
+            </div>
+            <div id="bingoCalledGrid" class="bingo-called-grid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WINNER CARD GENERATOR MODAL -->
+    <section id="winnerCardModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="winnerCardTitle">
+      <div class="modal-card" style="max-width: 44rem;">
+        <div class="panel-topline">
+          <h2 id="winnerCardTitle" data-i18n="winner_card_title">🏆 Thiệp Vinh Danh Chiến Thắng</h2>
+          <button id="closeWinnerCardButton" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+        <div class="winner-card-canvas-wrap">
+          <canvas id="winnerCardCanvas" width="1200" height="630"></canvas>
+        </div>
+        <div class="modal-actions">
+          <button id="downloadWinnerCardButton" class="accent-btn" type="button" data-i18n="winner_card_download">📥 Tải ảnh thiệp (PNG)</button>
+          <button id="copyWinnerCardButton" class="ghost-btn" type="button" data-i18n="winner_card_copy">📋 Sao chép ảnh</button>
+          <button id="closeWinnerCardModalBtn" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MULTI-WHEEL PRESET MODAL -->
+    <section id="multiPresetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="multiPresetTitle">
+      <div class="modal-card template-card">
+        <div class="panel-topline">
+          <h2 id="multiPresetTitle" data-i18n="multi_presets">🎭 Mẫu phối hợp nhiều vòng quay</h2>
+          <button id="closeMultiPresetButton" class="ghost-btn" type="button" data-i18n="close"></button>
+        </div>
+        <div id="multiPresetGrid" class="template-grid"></div>
       </div>
     </section>
 

@@ -527,34 +527,32 @@ function drawSegmentLabel(ctx, segment, settings, rotation, centerX, centerY, ra
     return;
   }
   const worldAngle = segment.center + rotation - Math.PI / 2;
-  const labelRadius = radius * 0.61;
-  const x = centerX + Math.cos(worldAngle) * labelRadius;
-  const y = centerY + Math.sin(worldAngle) * labelRadius;
-  const arcLength = (segment.end - segment.start) * radius;
-  const maxWidth = Math.max(36, arcLength * 0.68);
+  const labelRadius = radius * 0.58;
+  const maxLabelWidth = radius * 0.50;
 
   let label = resolveLabel(segment.entry, mysteryWheel);
-  if (simplified && label.length > 10) {
-    label = `${label.slice(0, 9)}…`;
+  if (simplified && label.length > 12) {
+    label = `${label.slice(0, 11)}…`;
   }
-  let fontSize = clamp(arcLength * (simplified ? 0.1 : 0.14), 10, simplified ? 20 : 28);
+  let fontSize = clamp(radius * (simplified ? 0.08 : 0.095), 11, simplified ? 18 : 26);
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(worldAngle + Math.PI / 2);
+  ctx.translate(centerX, centerY);
+  ctx.rotate(worldAngle);
+  ctx.translate(labelRadius, 0);
 
-  while (fontSize > (simplified ? 9 : 11)) {
-    ctx.font = `700 ${fontSize}px ${FONT_WHEEL}`;
-    if (ctx.measureText(label).width <= maxWidth) break;
+  ctx.font = `700 ${fontSize}px ${FONT_WHEEL}`;
+  while (fontSize > (simplified ? 9 : 10)) {
+    if (ctx.measureText(label).width <= maxLabelWidth) break;
     fontSize -= 1;
+    ctx.font = `700 ${fontSize}px ${FONT_WHEEL}`;
   }
 
   let renderLabel = label;
-  ctx.font = `700 ${fontSize}px ${FONT_WHEEL}`;
-  if (ctx.measureText(renderLabel).width > maxWidth) {
-    renderLabel = truncateToFit(ctx, renderLabel, maxWidth);
+  if (ctx.measureText(renderLabel).width > maxLabelWidth) {
+    renderLabel = truncateToFit(ctx, renderLabel, maxLabelWidth);
   }
 
-  ctx.fillStyle = segment.textColor;
+  ctx.fillStyle = segment.textColor || "#ffffff";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(renderLabel, 0, 0);

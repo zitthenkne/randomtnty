@@ -143,6 +143,13 @@ export class StateManager {
       ...entry
     }));
 
+    if (!merged.multiWheel || typeof merged.multiWheel !== "object") {
+      merged.multiWheel = deepClone(base.multiWheel);
+    }
+    if (!Array.isArray(merged.multiWheel.wheels) || merged.multiWheel.wheels.length === 0) {
+      merged.multiWheel.wheels = deepClone(base.multiWheel.wheels);
+    }
+
     return merged;
   }
 }
