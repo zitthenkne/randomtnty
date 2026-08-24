@@ -182,6 +182,12 @@ const dom = {
   teamMemberCountVal: document.querySelector("#teamMemberCountVal"),
   teamCountVal: document.querySelector("#teamCountVal"),
   teamPerGroupVal: document.querySelector("#teamPerGroupVal"),
+  teamNamesAccordion: document.querySelector("#teamNamesAccordion"),
+  teamNamesCountBadge: document.querySelector("#teamNamesCountBadge"),
+  teamCustomNamesInput: document.querySelector("#teamCustomNamesInput"),
+  teamShuffleNamesBtn: document.querySelector("#teamShuffleNamesBtn"),
+  teamClearNamesBtn: document.querySelector("#teamClearNamesBtn"),
+  shuffleAllTeamNamesBtn: document.querySelector("#shuffleAllTeamNamesBtn"),
   teamMembersAccordion: document.querySelector("#teamMembersAccordion"),
   teamListCountBadge: document.querySelector("#teamListCountBadge"),
   teamCustomMembersInput: document.querySelector("#teamCustomMembersInput"),
@@ -2314,7 +2320,29 @@ const TEAM_NAMES_PRESETS = {
     { name: "Đội Nụ Cười Y Khoa 😊", color: "#059669" },
     { name: "Đội Trái Tim Nhân Ái 💖", color: "#db2777" },
     { name: "Đội Thầy Thuốc Tương Lai 🌿", color: "#16a34a" },
-    { name: "Đội Man In Red 🚩", color: "#dc2626" }
+    { name: "Đội Man In Red 🚩", color: "#dc2626" },
+    { name: "Đội Huyết Học Xung Kích 🩸", color: "#b91c1c" },
+    { name: "Đội Ánh Dương Tình Nguyện ☀️", color: "#f59e0b" }
+  ],
+  med: [
+    { name: "Khoa Cấp Cứu 🚑", color: "#dc2626" },
+    { name: "Khoa Hồi Sức Tích Cực ⚡", color: "#ea580c" },
+    { name: "Khoa Ngoại Tổng Quát 🔪", color: "#2563eb" },
+    { name: "Khoa Nhi Nụ Cười 🧸", color: "#db2777" },
+    { name: "Khoa Tim Mạch ❤", color: "#e11d48" },
+    { name: "Khoa Thần Kinh 🧠", color: "#7c3aed" },
+    { name: "Khoa Dược Lâm Sàng 💊", color: "#059669" },
+    { name: "Khoa Mắt Sáng 👁", color: "#0891b2" }
+  ],
+  departments: [
+    { name: "Ban Nhân Sự 👥", color: "#2563eb" },
+    { name: "Ban Chuyên Môn 🩺", color: "#059669" },
+    { name: "Ban Truyền Thông 📸", color: "#db2777" },
+    { name: "Ban Hậu Cần 📦", color: "#ea580c" },
+    { name: "Ban Đối Ngoại 🤝", color: "#7c3aed" },
+    { name: "Ban Văn Thể Mỹ 🎭", color: "#eab308" },
+    { name: "Ban Sự Kiện 🎉", color: "#e11d48" },
+    { name: "Ban Tài Chính 💰", color: "#16a34a" }
   ],
   anime: [
     { name: "Băng Mũ Rơm 👒", color: "#ef4444" },
@@ -2325,6 +2353,16 @@ const TEAM_NAMES_PRESETS = {
     { name: "Học Viện Anh Hùng ⚡", color: "#8b5cf6" },
     { name: "Trinh Sát Đoàn 🛡", color: "#06b6d4" },
     { name: "Hội Pháp Sư Fairy 🔮", color: "#ec4899" }
+  ],
+  superheroes: [
+    { name: "Biệt Đội Avengers 🛡", color: "#dc2626" },
+    { name: "Vệ Binh Dải Ngân Hà 🚀", color: "#7c3aed" },
+    { name: "Liên Minh Công Lý ⚡", color: "#2563eb" },
+    { name: "Dị Nhân X-Men 🧬", color: "#f59e0b" },
+    { name: "Người Nhện Thân Thiện 🕷", color: "#e11d48" },
+    { name: "Hiệp Sĩ Bóng Đêm 🦇", color: "#334155" },
+    { name: "Chiến Binh Wakanda 🐾", color: "#475569" },
+    { name: "Pháp Sư Tối Thượng 🔮", color: "#059669" }
   ],
   color: [
     { name: "Đội Đỏ Rực Rỡ 🔴", color: "#ef4444" },
@@ -2348,6 +2386,12 @@ const TEAM_NAMES_PRESETS = {
   ]
 };
 
+const TEAM_COLOR_SWATCHES = [
+  "#e63946", "#2563eb", "#059669", "#ea580c",
+  "#9333ea", "#db2777", "#0891b2", "#f59e0b",
+  "#334155", "#16a34a", "#84cc16", "#6366f1"
+];
+
 const ANIME_SAMPLE_MEMBERS = [
   "Luffy 👒", "Zoro ⚔", "Sanji 🍳", "Nami 🍊",
   "Naruto 🍥", "Sasuke ⚡", "Conan 👓", "Tanjiro 🌊",
@@ -2364,6 +2408,15 @@ function getTeamMemberList() {
   const wheelMembers = activeEntries(state).map((e) => e.label).filter(Boolean);
   if (wheelMembers.length >= 2) return wheelMembers;
   return [...ANIME_SAMPLE_MEMBERS];
+}
+
+function getTeamCustomNamesList() {
+  const customText = dom.teamCustomNamesInput?.value?.trim();
+  if (customText) {
+    const lines = customText.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+    if (lines.length > 0) return lines;
+  }
+  return [];
 }
 
 function updateTeamStatsSummary() {
@@ -2387,6 +2440,9 @@ function updateTeamStatsSummary() {
   if (dom.teamCountVal) dom.teamCountVal.textContent = `${teamCount} Đội`;
   if (dom.teamPerGroupVal) dom.teamPerGroupVal.textContent = `~${perGroup} người`;
   if (dom.teamListCountBadge) dom.teamListCountBadge.textContent = String(total);
+
+  const customNames = getTeamCustomNamesList();
+  if (dom.teamNamesCountBadge) dom.teamNamesCountBadge.textContent = String(customNames.length || teamCount);
 }
 
 function openTeamGeneratorModal() {
@@ -2414,18 +2470,32 @@ function executeDivideTeams() {
   }
 
   const namingStyle = dom.teamNamingSelect?.value || "tnty";
+  const customNames = getTeamCustomNamesList();
   const namePreset = TEAM_NAMES_PRESETS[namingStyle] || TEAM_NAMES_PRESETS.tnty;
 
   audioEngine.ensureReady();
   audioEngine.playDiceRoll();
 
   const shuffled = shuffleArray([...members]);
-  const teams = Array.from({ length: teamCount }, (_, i) => ({
-    id: `team_${i}`,
-    name: namePreset[i % namePreset.length].name,
-    color: namePreset[i % namePreset.length].color,
-    members: []
-  }));
+  const teams = Array.from({ length: teamCount }, (_, i) => {
+    let name = "";
+    let color = TEAM_COLOR_SWATCHES[i % TEAM_COLOR_SWATCHES.length];
+
+    if (customNames.length > 0) {
+      name = customNames[i] || `Đội ${i + 1}`;
+    } else {
+      const presetItem = namePreset[i % namePreset.length];
+      name = presetItem.name;
+      color = presetItem.color;
+    }
+
+    return {
+      id: `team_${i}`,
+      name,
+      color,
+      members: []
+    };
+  });
 
   shuffled.forEach((member, idx) => {
     teams[idx % teamCount].members.push(member);
@@ -2435,6 +2505,55 @@ function executeDivideTeams() {
   updateTeamStatsSummary();
   renderTeamCards(teams);
   showToast(`Đã chia ${members.length} thành viên thành ${teamCount} đội!`);
+}
+
+function shuffleAllTeamNames() {
+  if (!currentDividedTeams.length) return;
+  const namingStyle = dom.teamNamingSelect?.value || "tnty";
+  const customNames = getTeamCustomNamesList();
+  const namePreset = TEAM_NAMES_PRESETS[namingStyle] || TEAM_NAMES_PRESETS.tnty;
+  
+  audioEngine.ensureReady();
+  audioEngine.playDiceRoll();
+
+  if (customNames.length > 0) {
+    const shuffledNames = shuffleArray([...customNames]);
+    currentDividedTeams.forEach((team, idx) => {
+      team.name = shuffledNames[idx % shuffledNames.length];
+    });
+  } else {
+    const shuffledPreset = shuffleArray([...namePreset]);
+    currentDividedTeams.forEach((team, idx) => {
+      const item = shuffledPreset[idx % shuffledPreset.length];
+      team.name = item.name;
+      team.color = item.color;
+    });
+  }
+
+  renderTeamCards(currentDividedTeams);
+  showToast("Đã đổi ngẫu nhiên tên cho tất cả các đội!");
+}
+
+function fillTeamNamesPreset(presetKey) {
+  const preset = TEAM_NAMES_PRESETS[presetKey];
+  if (!preset) return;
+  const names = preset.map((item) => item.name);
+  if (dom.teamCustomNamesInput) {
+    dom.teamCustomNamesInput.value = names.join("\n");
+  }
+  if (dom.teamNamingSelect) {
+    dom.teamNamingSelect.value = presetKey;
+  }
+  updateTeamStatsSummary();
+  if (currentDividedTeams.length > 0) {
+    currentDividedTeams.forEach((team, idx) => {
+      const item = preset[idx % preset.length];
+      team.name = item.name;
+      team.color = item.color;
+    });
+    renderTeamCards(currentDividedTeams);
+  }
+  showToast(`Đã áp dụng mẫu tên đội: ${preset[0].name.split(" ")[0]}!`);
 }
 
 function renderTeamCards(teams) {
@@ -2449,23 +2568,94 @@ function renderTeamCards(teams) {
     header.className = "team-card-header";
     header.style.background = team.color;
 
+    // Title Wrap with pencil icon + editable input
+    const titleWrap = document.createElement("div");
+    titleWrap.className = "team-title-wrap";
+
+    const editIcon = document.createElement("span");
+    editIcon.textContent = "✏️";
+    editIcon.style.fontSize = "0.75rem";
+    editIcon.style.opacity = "0.8";
+
     const titleInput = document.createElement("input");
     titleInput.className = "team-title-inline-input";
     titleInput.type = "text";
     titleInput.value = team.name;
-    titleInput.title = "Bấm để đổi tên đội";
+    titleInput.title = "Bấm trực tiếp để đổi tên đội này";
+    titleInput.placeholder = `Đội ${tIdx + 1}`;
     titleInput.addEventListener("input", (e) => {
       team.name = e.target.value.trim() || `Đội ${tIdx + 1}`;
     });
 
-    const countSpan = document.createElement("span");
-    countSpan.style.whiteSpace = "nowrap";
-    countSpan.style.fontSize = "var(--text-xs)";
-    countSpan.style.fontWeight = "800";
-    countSpan.textContent = `(${team.members.length})`;
+    titleWrap.appendChild(editIcon);
+    titleWrap.appendChild(titleInput);
+    header.appendChild(titleWrap);
 
-    header.appendChild(titleInput);
-    header.appendChild(countSpan);
+    // Header Actions: Color Palette Picker, Single Randomizer, Member Count
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "team-header-actions";
+
+    // Randomize Single Team Name Button
+    const randomBtn = document.createElement("button");
+    randomBtn.className = "team-header-btn";
+    randomBtn.type = "button";
+    randomBtn.title = "Đổi tên ngẫu nhiên cho riêng đội này";
+    randomBtn.innerHTML = "🎲";
+    randomBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const namingStyle = dom.teamNamingSelect?.value || "tnty";
+      const namePreset = TEAM_NAMES_PRESETS[namingStyle] || TEAM_NAMES_PRESETS.tnty;
+      const randomItem = namePreset[Math.floor(cryptoRandom() * namePreset.length)];
+      team.name = randomItem.name;
+      team.color = randomItem.color;
+      header.style.background = team.color;
+      titleInput.value = team.name;
+      audioEngine.ensureReady();
+      audioEngine.playWinVariant("chime");
+      showToast(`Đã đổi tên: ${team.name}`);
+    });
+
+    // Color Palette Toggle Button
+    const colorBtn = document.createElement("button");
+    colorBtn.className = "team-header-btn";
+    colorBtn.type = "button";
+    colorBtn.title = "Chọn màu cho đội này";
+    colorBtn.innerHTML = "🎨";
+
+    // Palette Popover
+    const palette = document.createElement("div");
+    palette.className = "team-color-palette hidden";
+    TEAM_COLOR_SWATCHES.forEach((hex) => {
+      const swatch = document.createElement("div");
+      swatch.className = "color-dot-swatch";
+      swatch.style.background = hex;
+      swatch.addEventListener("click", (e) => {
+        e.stopPropagation();
+        team.color = hex;
+        header.style.background = hex;
+        palette.classList.add("hidden");
+      });
+      palette.appendChild(swatch);
+    });
+
+    colorBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // Close other palettes first
+      document.querySelectorAll(".team-color-palette").forEach((p) => {
+        if (p !== palette) p.classList.add("hidden");
+      });
+      palette.classList.toggle("hidden");
+    });
+
+    const countSpan = document.createElement("span");
+    countSpan.className = "team-count-badge";
+    countSpan.textContent = `${team.members.length}`;
+
+    actionsWrap.appendChild(randomBtn);
+    actionsWrap.appendChild(colorBtn);
+    actionsWrap.appendChild(countSpan);
+    header.appendChild(actionsWrap);
+    header.appendChild(palette);
     card.appendChild(header);
 
     const membersWrap = document.createElement("div");
@@ -2485,6 +2675,11 @@ function renderTeamCards(teams) {
 
     card.appendChild(membersWrap);
     dom.teamsGrid.appendChild(card);
+  });
+
+  // Global click to close color palettes
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".team-color-palette").forEach((p) => p.classList.add("hidden"));
   });
 
   // Attach move button handlers
@@ -4671,11 +4866,38 @@ function bindEvents() {
     updateTeamStatsSummary();
     executeDivideTeams();
   });
-  dom.teamPerCountSelect?.addEventListener("change", () => {
-    updateTeamStatsSummary();
-    executeDivideTeams();
+  dom.teamNamingSelect?.addEventListener("change", (e) => {
+    if (e.target.value === "custom") {
+      if (dom.teamNamesAccordion) dom.teamNamesAccordion.open = true;
+      dom.teamCustomNamesInput?.focus();
+    } else {
+      executeDivideTeams();
+    }
   });
-  dom.teamNamingSelect?.addEventListener("change", executeDivideTeams);
+  dom.teamCustomNamesInput?.addEventListener("input", () => {
+    updateTeamStatsSummary();
+    if (dom.teamNamingSelect) dom.teamNamingSelect.value = "custom";
+    if (currentDividedTeams.length > 0) {
+      const customNames = getTeamCustomNamesList();
+      currentDividedTeams.forEach((team, idx) => {
+        if (customNames[idx]) team.name = customNames[idx];
+      });
+      renderTeamCards(currentDividedTeams);
+    }
+  });
+  dom.teamShuffleNamesBtn?.addEventListener("click", shuffleAllTeamNames);
+  dom.shuffleAllTeamNamesBtn?.addEventListener("click", shuffleAllTeamNames);
+  dom.teamClearNamesBtn?.addEventListener("click", () => {
+    if (dom.teamCustomNamesInput) dom.teamCustomNamesInput.value = "";
+    updateTeamStatsSummary();
+    showToast("Đã xóa danh sách tên đội tùy chỉnh!");
+  });
+  document.querySelectorAll(".team-preset-btn")?.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.fillPreset;
+      if (key) fillTeamNamesPreset(key);
+    });
+  });
   dom.teamCustomMembersInput?.addEventListener("input", updateTeamStatsSummary);
   dom.teamSyncWheelBtn?.addEventListener("click", () => {
     const entries = activeEntries(getState()).map((e) => e.label).join("\n");
