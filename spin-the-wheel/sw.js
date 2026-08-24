@@ -1,4 +1,4 @@
-const CACHE_VERSION = "wheel-spinner-v5-20260708-1";
+const CACHE_VERSION = "wheel-spinner-v6-20260824-1";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
 const APP_SHELL_ASSETS = [
