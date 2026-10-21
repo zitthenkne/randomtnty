@@ -9,7 +9,7 @@ async function loadPack(code = "vi") {
   if (packs[code]) return packs[code];
 
   try {
-    const response = await fetch(`/lang/vi.json`);
+    const response = await fetch(new URL("./lang/vi.json", import.meta.url));
     if (!response.ok) throw new Error("Language pack unavailable");
     const payload = await response.json();
     packs["vi"] = payload;

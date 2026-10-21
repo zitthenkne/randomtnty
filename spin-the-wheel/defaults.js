@@ -129,7 +129,7 @@ export const MULTI_WHEEL_PRESETS = [
 
 export const DEFAULT_STATE = {
   schemaVersion: SCHEMA_VERSION,
-  title: "My Wheel",
+  title: "",
   description: "",
   entries: DEFAULT_ENTRIES,
   tournament: {
@@ -220,7 +220,15 @@ export const DEFAULT_STATE = {
     performanceModeAuto: true,
     performanceOverview: false,
     confettiEnabled: true,
-    reduceMotionOverride: false
+    reduceMotionOverride: false,
+    autoEliminate: false,
+    countdown: false,
+    speakWinner: false,
+    prizeMode: false
+  },
+  prizes: {
+    list: ["Giải Ba 🥉", "Giải Nhì 🥈", "Giải Nhất 🥇", "Giải Đặc biệt 🏆"],
+    cursor: 0
   },
   theme: {
     preset: "tnty",
@@ -250,7 +258,8 @@ export const DEFAULT_STATE = {
     masterVolume: 0.7,
     tickEnabled: true,
     winEnabled: true,
-    spinEnabled: false
+    spinEnabled: false,
+    muted: false
   },
   ui: {
     language: "vi",

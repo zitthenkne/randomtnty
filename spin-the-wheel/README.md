@@ -52,7 +52,7 @@ No `npm install` is required for the app itself.
 
 ## Deployment Notes
 
-- The project currently assumes root deployment at `/`, not a subpath. Asset links, the manifest, and the service worker scope all use root-based paths.
+- Asset links, the manifest, and the service worker use relative paths, so the app works both at `/` and under a subpath (for example `/spin-the-wheel/` or VS Code Live Server).
 - If you deploy to a different domain or a forked site, update the canonical, Open Graph, Twitter, and `hreflang` URLs in the HTML pages.
 - Update `SITE_ORIGIN` in `app.js` if the production origin changes.
 - Update `CNAME` if you deploy with GitHub Pages and a custom domain.

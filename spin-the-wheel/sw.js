@@ -1,46 +1,47 @@
-const CACHE_VERSION = "wheel-spinner-v6-20260824-1";
+const CACHE_VERSION = "wheel-spinner-v7-20261021-1";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 
 const APP_SHELL_ASSETS = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/app.js",
-  "/audio-engine.js",
-  "/defaults.js",
-  "/i18n.js",
-  "/share-codec.js",
-  "/state-manager.js",
-  "/templates.js",
-  "/themes.js",
-  "/utils.js",
-  "/wheel-engine.js",
-  "/wheel-library.js",
-  "/manifest.json",
-  "/favicon.ico",
-  "/logo_clb.png",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/og-image.png",
-  "/og-image.svg",
-  "/sitemap.xml",
-  "/CNAME",
-  "/lang/en.json",
-  "/lang/vi.json",
-  "/lang/es.json",
-  "/lang/pt.json",
-  "/lang/fr.json",
-  "/lang/de.json",
-  "/lang/ja.json",
-  "/lang/ko.json",
-  "/lang/zh.json",
-  "/lang/id.json"
+  "./",
+  "index.html",
+  "styles.css",
+  "app.js",
+  "audio-engine.js",
+  "defaults.js",
+  "i18n.js",
+  "share-codec.js",
+  "state-manager.js",
+  "templates.js",
+  "themes.js",
+  "utils.js",
+  "wheel-engine.js",
+  "wheel-library.js",
+  "manifest.json",
+  "favicon.ico",
+  "logo_clb.png",
+  "icon-192.png",
+  "icon-512.png",
+  "og-image.png",
+  "og-image.svg",
+  "sitemap.xml",
+  "CNAME",
+  "lang/en.json",
+  "lang/vi.json",
+  "lang/es.json",
+  "lang/pt.json",
+  "lang/fr.json",
+  "lang/de.json",
+  "lang/ja.json",
+  "lang/ko.json",
+  "lang/zh.json",
+  "lang/id.json"
 ];
 
 const APP_SHELL_PATHS = new Set(APP_SHELL_ASSETS.map((assetPath) => {
-  const assetUrl = new URL(assetPath, self.location.origin);
+  const assetUrl = new URL(assetPath, self.location);
   return assetUrl.pathname;
 }));
+const INDEX_PATH = new URL("index.html", self.location).pathname;
 
 function isCacheablePath(pathname) {
   return APP_SHELL_PATHS.has(pathname);
@@ -81,7 +82,7 @@ self.addEventListener("fetch", (event) => {
           const responseClone = response.clone();
           caches.open(APP_SHELL_CACHE).then((cache) => {
             if (isNavigation) {
-              const navigationCacheKey = isCacheablePath(pathname) ? pathname : "/index.html";
+              const navigationCacheKey = isCacheablePath(pathname) ? pathname : INDEX_PATH;
               cache.put(navigationCacheKey, responseClone);
               return;
             }
@@ -97,7 +98,7 @@ self.addEventListener("fetch", (event) => {
         if (isNavigation) {
           const cachedPage = await cache.match(pathname);
           if (cachedPage) return cachedPage;
-          const fallback = await cache.match("/index.html");
+          const fallback = await cache.match(INDEX_PATH);
           return fallback || Response.error();
         }
 

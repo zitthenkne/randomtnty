@@ -123,16 +123,16 @@
   }
   </script>
 
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="/logo_clb.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/logo_clb.png">
-  <link rel="apple-touch-icon" href="/logo_clb.png">
-  <link rel="preload" as="image" href="/logo_clb.png" fetchpriority="high">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="logo_clb.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="logo_clb.png">
+  <link rel="apple-touch-icon" href="logo_clb.png">
+  <link rel="preload" as="image" href="logo_clb.png" fetchpriority="high">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lexend:wght@700;800;900&display=swap">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <noscript>
@@ -146,8 +146,8 @@
     <header class="topbar" role="banner">
       <div class="brand-wrap">
 
-        <a href="/" class="brand-link" data-i18n-aria-label="brand_home_aria">
-          <img src="/logo_clb.png" alt="Logo CLB Tình Nguyện Trường Y" class="brand-logo" width="48" height="48">
+        <a href="./" class="brand-link" data-i18n-aria-label="brand_home_aria">
+          <img src="logo_clb.png" alt="Logo CLB Tình Nguyện Trường Y" class="brand-logo" width="48" height="48">
           <span class="brand-text">
             <strong>CLB Tình Nguyện Trường Y</strong>
             <span class="brand-slogan">Man in Red</span>
@@ -155,7 +155,7 @@
         </a>
       </div>
       <div class="topbar-actions">
-        <button id="settingsButton" class="ghost-btn" type="button" data-i18n="settings"></button>
+        <button id="settingsButton" class="ghost-btn" type="button" data-icon="⚙️" data-i18n="settings" data-i18n-title="settings"></button>
         <div class="topbar-event-preset">
           <label class="sr-only" for="eventPresetSelect" data-i18n="event_preset"></label>
           <select id="eventPresetSelect" class="topbar-event-select" data-i18n-aria-label="event_preset">
@@ -168,23 +168,28 @@
             <option value="dark-luxury" data-i18n="event_dark_luxury"></option>
           </select>
         </div>
-        <button id="fullscreenToggle" class="ghost-btn icon-btn" type="button" data-i18n-aria-label="toggle_fullscreen_aria">⛶</button>
-        <button id="themeModeToggle" class="ghost-btn icon-btn" type="button" aria-label="Toggle dark/light mode">🌞</button>
-        <button id="libraryButton" class="ghost-btn" type="button" data-i18n="my_wheels"></button>
-        <button id="shareButton" class="accent-btn" type="button" data-i18n="share"></button>
-        <button id="shortcutButton" class="ghost-btn icon-btn" type="button" data-i18n-aria-label="shortcuts">⌨</button>
+        <button id="muteToggle" class="ghost-btn icon-btn" type="button" aria-label="Bật/tắt âm thanh" title="Bật/tắt âm thanh (M)" aria-pressed="false">🔊</button>
+        <button id="fullscreenToggle" class="ghost-btn icon-btn" type="button" aria-label="Chế độ trình chiếu" title="Trình chiếu (F)">📺</button>
+        <button id="themeModeToggle" class="ghost-btn icon-btn" type="button" data-i18n-aria-label="toggle_theme_aria" title="Sáng / Tối">☀️</button>
+        <button id="libraryButton" class="ghost-btn" type="button" data-icon="📚" data-i18n="my_wheels" data-i18n-title="my_wheels"></button>
+        <button id="shareButton" class="accent-btn" type="button" data-icon="🔗" data-i18n="share" data-i18n-title="share"></button>
+        <button id="shortcutButton" class="ghost-btn icon-btn" type="button" data-i18n-aria-label="shortcuts" title="Phím tắt (?)">⌨</button>
       </div>
     </header>
 
     <nav class="mode-navigation" aria-label="Chế độ quay và công cụ">
-      <button id="modeSingleWheelBtn" class="mode-nav-btn active" type="button" data-mode="single">
-        <span class="mode-icon">🎡</span>
-        <span data-i18n="mode_single_wheel">1 Bánh xe</span>
-      </button>
-      <button id="modeMultiWheelBtn" class="mode-nav-btn" type="button" data-mode="multi">
-        <span class="mode-icon">🎡</span>
-        <span data-i18n="mode_multi_wheel">Nhiều vòng quay</span>
-      </button>
+      <div id="modeSwitch" class="mode-switch" data-active="single">
+        <span class="mode-pill" aria-hidden="true"></span>
+        <button id="modeSingleWheelBtn" class="mode-nav-btn active" type="button" data-mode="single" aria-pressed="true">
+          <span class="mode-icon">🎡</span>
+          <span data-i18n="mode_single_wheel">1 Bánh xe</span>
+        </button>
+        <button id="modeMultiWheelBtn" class="mode-nav-btn" type="button" data-mode="multi" aria-pressed="false">
+          <span class="mode-icon">🎠</span>
+          <span data-i18n="mode_multi_wheel">Nhiều vòng quay</span>
+        </button>
+      </div>
+      <span class="mode-divider" aria-hidden="true"></span>
       <button id="modeBatchDrawBtn" class="mode-nav-btn" type="button" data-mode="batch">
         <span class="mode-icon">⚡</span>
         <span data-i18n="mode_batch_draw">Rút hàng loạt</span>
@@ -205,6 +210,12 @@
         
         <!-- SINGLE WHEEL MODE WRAP -->
         <div id="singleWheelWrap" class="wheel-wrap">
+          <label class="sr-only" for="wheelTitleInput">Tên vòng quay</label>
+          <input id="wheelTitleInput" class="wheel-title-input" type="text" maxlength="60" placeholder="✏️ Đặt tên vòng quay…" autocomplete="off">
+          <div id="prizeBanner" class="prize-banner hidden">
+            <span id="prizeBannerText"></span>
+            <button id="editPrizesButton" class="link-btn" type="button">✏️ Sửa giải</button>
+          </div>
           <div class="wheel-badges">
             <span id="weightedBadge" class="mode-badge hidden" data-i18n="weighted_badge">⚖ Weighted</span>
             <span id="seedBadge" class="mode-badge hidden" data-i18n="seed_badge">🔁 Seeded</span>
@@ -214,8 +225,13 @@
             <div class="wheel-glow" aria-hidden="true"></div>
             <div class="wheel-pointer" aria-hidden="true"></div>
             <button id="centerSpinButton" class="center-spin-btn" type="button" data-i18n="spin_button" data-i18n-aria-label="spin_button"></button>
+            <div id="countdownOverlay" class="countdown-overlay hidden" aria-live="assertive"></div>
           </div>
-          <p id="firstRunHint" class="hint hidden" data-i18n="first_run_hint"></p>
+          <div id="recentWinnersStrip" class="recent-strip hidden" aria-label="Vừa trúng"></div>
+          <div id="mascot" class="mascot" aria-live="polite">
+            <p id="mascotBubble" class="mascot-bubble"></p>
+            <button id="mascotFace" class="mascot-face" type="button" aria-label="Linh vật TNTY">😊</button>
+          </div>
           <p class="club-slogan">❤ Man in Red — Tình Nguyện Trường Y</p>
         </div>
 
@@ -248,12 +264,12 @@
 
       <aside class="side-panel" data-i18n-aria-label="controls_panel_aria">
         <nav class="panel-tabs" data-i18n-aria-label="panel_tabs_aria">
-          <button class="tab-btn active" type="button" data-tab="entries" data-i18n="entries_tab"></button>
-          <button class="tab-btn" type="button" data-tab="results" data-i18n="results_tab"></button>
+          <button class="tab-btn active" type="button" data-tab="entries"><span data-i18n="entries_tab"></span><span id="entriesTabCount" class="tab-count">0</span></button>
+          <button class="tab-btn" type="button" data-tab="results"><span data-i18n="results_tab"></span><span id="resultsTabCount" class="tab-count">0</span></button>
           <button id="factoryResetButton" class="tab-btn tab-reset-btn" type="button" data-i18n="reset_app" data-i18n-title="reset_app_tooltip" data-i18n-aria-label="reset_app_tooltip"></button>
         </nav>
 
-        <section id="entriesTab" class="panel-tab active" role="region" data-i18n-aria-label="entries_tab">
+        <section id="entriesTab" class="panel-tab active" role="region" data-i18n-aria-label="entries_tab" data-drop-label="📥 Thả file vào đây để nhập danh sách">
           <!-- MULTI-WHEEL SUB TABS -->
           <div id="multiWheelTabsNav" class="multi-wheel-nav-tabs hidden">
             <button class="multi-tab-btn active" type="button" data-wheel-idx="0">Vòng 1</button>
@@ -270,25 +286,36 @@
             <button id="redoButton" class="ghost-btn" type="button" data-i18n="redo" tabindex="-1"></button>
             <button id="openLibraryButton" class="ghost-btn" type="button" data-i18n="my_wheels" tabindex="-1"></button>
           </div>
-          <div class="entry-actions">
-            <button id="shuffleEntriesButton" class="ghost-btn" type="button" data-i18n="shuffle"></button>
-            <button id="sortEntriesButton" class="ghost-btn" type="button" data-i18n="sort_az"></button>
-            <button id="clearEntriesButton" class="ghost-btn danger-btn" type="button" data-i18n="clear_all"></button>
-            <button id="saveAsButton" class="ghost-btn" type="button" data-i18n="save_as"></button>
-            <select id="recentWheelsSelect" class="recent-wheels-select" data-i18n-aria-label="recent_wheels"></select>
-          </div>
-          <span id="entryCountBadge" class="hidden" aria-hidden="true">0</span>
-          <div id="entriesList" class="entries-list" role="list"></div>
           <div class="entry-form">
             <label class="sr-only" for="addEntryInput" data-i18n="add_entry"></label>
             <textarea id="addEntryInput" rows="1" data-i18n-placeholder="add_entry_placeholder" maxlength="4000" autocapitalize="sentences"></textarea>
-            <button id="addEntryButton" class="accent-btn" type="button" data-i18n="add"></button>
+            <button id="addEntryButton" class="accent-btn" type="button" data-icon="＋" data-i18n="add"></button>
           </div>
+          <div class="entry-actions">
+            <button id="shuffleEntriesButton" class="ghost-btn" type="button" data-icon="🔀" data-i18n="shuffle"></button>
+            <button id="sortEntriesButton" class="ghost-btn" type="button" data-icon="🔤" data-i18n="sort_az"></button>
+            <button id="saveAsButton" class="ghost-btn" type="button" data-icon="💾" data-i18n="save_as"></button>
+            <button id="clearEntriesButton" class="ghost-btn danger-btn" type="button" data-icon="🗑️" data-i18n="clear_all"></button>
+            <select id="recentWheelsSelect" class="recent-wheels-select" data-i18n-aria-label="recent_wheels"></select>
+          </div>
+          <div class="quick-toggles" role="group" aria-label="Tùy chọn quay nhanh">
+            <label class="toggle-chip" title="Người trúng bị loại khỏi vòng quay khi đóng kết quả (bốc thăm không trùng)"><input id="autoEliminateToggle" type="checkbox"><span>🎯 Tự loại người trúng</span></label>
+            <label class="toggle-chip" title="Đếm ngược 3-2-1 trước mỗi lần quay"><input id="countdownToggle" type="checkbox"><span>⏱ Đếm ngược</span></label>
+            <label class="toggle-chip" title="Đọc to tên người thắng bằng giọng tiếng Việt"><input id="speakWinnerToggle" type="checkbox"><span>🗣 Đọc tên</span></label>
+            <label class="toggle-chip" title="Mỗi lượt quay trao một giải theo thứ tự (Giải Ba → Nhì → Nhất…)"><input id="prizeModeToggle" type="checkbox"><span>🏅 Trao giải</span></label>
+          </div>
+          <div id="entrySearchWrap" class="entry-search-wrap hidden">
+            <input id="entrySearchInput" type="search" placeholder="🔍 Tìm trong danh sách…" aria-label="Tìm trong danh sách" autocomplete="off">
+            <span id="entrySearchCount" class="entry-search-count"></span>
+          </div>
+          <span id="entryCountBadge" class="hidden" aria-hidden="true">0</span>
+          <div id="entriesList" class="entries-list" role="list"></div>
           <div class="entry-secondary-actions">
-            <button id="pasteListButton" class="ghost-btn" type="button" data-i18n="entry_tools"></button>
-            <button id="templateButton" class="ghost-btn" type="button" data-i18n="templates"></button>
-            <button id="resetEliminationsButton" class="ghost-btn hidden" type="button" data-i18n="reset_eliminations"></button>
+            <button id="pasteListButton" class="ghost-btn" type="button" data-icon="📋" data-i18n="entry_tools"></button>
+            <button id="templateButton" class="ghost-btn" type="button" data-icon="🧩" data-i18n="templates"></button>
+            <button id="resetEliminationsButton" class="ghost-btn hidden" type="button" data-icon="↺" data-i18n="reset_eliminations"></button>
           </div>
+          <p class="drop-hint">💡 Mẹo: kéo-thả file <b>.txt / .csv / .json</b> vào đây để nhập nhanh</p>
           <p id="emptyTemplateHint" class="empty-template-hint hidden">
             <button id="emptyTemplateButton" class="link-btn" type="button" data-i18n="start_from_template"></button>
           </p>
@@ -456,6 +483,7 @@
                 <select id="celebrationSelect" data-i18n-aria-label="celebration_effect">
                   <option value="confetti" data-i18n="celebration_confetti"></option>
                   <option value="fireworks" data-i18n="celebration_fireworks"></option>
+                  <option value="hearts">Mưa tim ❤</option>
                   <option value="none" data-i18n="celebration_none"></option>
                 </select>
                 <label class="checkbox-line">
@@ -513,11 +541,15 @@
 
     <section id="resultModal" class="modal result-modal hidden" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
       <div class="modal-card result-card">
+        <div class="result-rays" aria-hidden="true"></div>
+        <div id="resultEmoji" class="result-emoji" aria-hidden="true">🎉</div>
         <h2 id="resultTitle" data-i18n="winner"></h2>
+        <p id="resultPrize" class="result-prize hidden"></p>
         <p id="resultWinner" class="winner-name">-</p>
         <p id="resultSubtitle" class="winner-subtitle hidden"></p>
+        <p id="resultAutoNote" class="winner-subtitle hidden">🎯 Sẽ được loại khỏi vòng quay khi đóng</p>
         <div class="modal-actions">
-          <button id="spinAgainButton" class="accent-btn" type="button" data-i18n="spin_again"></button>
+          <button id="spinAgainButton" class="accent-btn" type="button" data-icon="🔄" data-i18n="spin_again"></button>
           <button id="generateWinnerCardButton" class="ghost-btn" type="button" data-i18n="winner_card_btn">🏆 Tạo thiệp vinh danh</button>
           <button id="removeWinnerButton" class="ghost-btn danger-btn hidden" type="button" data-i18n="remove_winner"></button>
           <button id="closeResultButton" class="ghost-btn" type="button" data-i18n="close"></button>
@@ -551,11 +583,11 @@
           <label for="batchDrawCountInput"><span data-i18n="batch_draw_count">Số lượng người rút</span>: <output id="batchDrawCountOutput">3</output></label>
           <input id="batchDrawCountInput" type="range" min="1" max="30" step="1" value="3">
           <div class="quick-count-chips">
-            <button class="chip-btn" type="button" data-count="1">+1</button>
-            <button class="chip-btn" type="button" data-count="3">+3</button>
-            <button class="chip-btn" type="button" data-count="5">+5</button>
-            <button class="chip-btn" type="button" data-count="10">+10</button>
-            <button id="batchCountAllBtn" class="chip-btn" type="button">Tất cả</button>
+            <button class="chip-btn" type="button" data-count="1">1</button>
+            <button class="chip-btn" type="button" data-count="3">3</button>
+            <button class="chip-btn" type="button" data-count="5">5</button>
+            <button class="chip-btn" type="button" data-count="10">10</button>
+            <button id="batchCountAllBtn" class="chip-btn" type="button" data-count="all">Tất cả</button>
           </div>
           
           <label class="checkbox-line">
@@ -879,6 +911,20 @@
       </div>
     </section>
 
+    <section id="prizeModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="prizeModalTitle">
+      <div class="modal-card">
+        <h2 id="prizeModalTitle">🏅 Danh sách giải thưởng</h2>
+        <p class="small-note">Mỗi dòng một giải, theo thứ tự trao (thường từ giải nhỏ đến giải lớn). Mỗi lượt quay trao giải kế tiếp.</p>
+        <textarea id="prizeListInput" rows="7" placeholder="Giải Ba 🥉&#10;Giải Nhì 🥈&#10;Giải Nhất 🥇"></textarea>
+        <p id="prizeProgressNote" class="small-note"></p>
+        <div class="modal-actions">
+          <button id="prizeResetButton" class="ghost-btn" type="button" data-icon="↺">Trao lại từ đầu</button>
+          <button id="prizeCancelButton" class="ghost-btn" type="button" data-i18n="cancel"></button>
+          <button id="prizeSaveButton" class="accent-btn" type="button" data-icon="💾">Lưu</button>
+        </div>
+      </div>
+    </section>
+
     <section id="factoryResetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="factoryResetTitle" aria-describedby="factoryResetDescription">
       <div class="modal-card confirm-card">
         <h2 id="factoryResetTitle"></h2>
@@ -994,10 +1040,15 @@
       <div class="modal-card">
         <h2 id="shortcutTitle" data-i18n="shortcuts"></h2>
         <ul class="shortcut-list">
-          <li><kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>K</kbd> — <span data-i18n="shortcut_spin"></span></li>
-          <li><kbd>F11</kbd> — <span data-i18n="shortcut_fullscreen"></span></li>
+          <li><kbd>Space</kbd> hoặc <kbd>Ctrl</kbd> + <kbd>K</kbd> — Quay (khi đang xem kết quả: quay lại)</li>
+          <li>🖐 Kéo / vuốt bánh xe — Quay bằng lực tay (vuốt càng mạnh, quay càng nhiều vòng)</li>
+          <li><kbd>N</kbd> — Thêm mục mới (gõ <code>1-50</code> để tạo dãy số, <code>a, b, c</code> để thêm nhiều mục)</li>
+          <li><kbd>M</kbd> — Bật/tắt âm thanh</li>
+          <li><kbd>F</kbd> — Chế độ trình chiếu</li>
+          <li><kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> — Hoàn tác / Làm lại</li>
           <li><kbd>Ctrl</kbd> + <kbd>S</kbd> — <span data-i18n="shortcut_save"></span></li>
-          <li><kbd>Escape</kbd> — <span data-i18n="shortcut_close"></span></li>
+          <li><kbd>?</kbd> — Mở bảng phím tắt</li>
+          <li><kbd>Esc</kbd> — <span data-i18n="shortcut_close"></span></li>
         </ul>
         <div class="modal-actions">
           <button id="closeShortcutButton" class="ghost-btn" type="button" data-i18n="close"></button>
@@ -1013,7 +1064,7 @@
   <input id="centerImageInput" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
   <input id="backgroundImageInput" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
 
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="app.js"></script>
 
 </body>
 </html>

@@ -5,6 +5,12 @@ export const THEME_PRESETS = {
     pageDark: { bg: "#140406", surface: "#2b0a0d", elevated: "#471016", accent: "#ff4d5c", accent2: "#4fc3f7" },
     pageLight: { bg: "#fff4f4", surface: "#ffffff", elevated: "#ffe7e9", accent: "#d62839", accent2: "#1d9bf0" }
   },
+  rainbow: {
+    label: "Cầu vồng",
+    colors: ["#ff6b6b", "#ffa94d", "#ffd43b", "#69db7c", "#38bdf8", "#9775fa", "#f783ac"],
+    pageDark: { bg: "#1a1026", surface: "#241733", elevated: "#312044", accent: "#ff8fab", accent2: "#38bdf8" },
+    pageLight: { bg: "#fff6fb", surface: "#ffffff", elevated: "#fff0f6", accent: "#e64980", accent2: "#1c7ed6" }
+  },
   pastel: {
     label: "Pastel",
     colors: ["#ffd6e7", "#caffbf", "#bde0fe", "#ffef9f", "#d9d4ff", "#ffc8a2", "#b5ead7", "#ffcad4"],

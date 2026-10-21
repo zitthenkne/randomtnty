@@ -2,6 +2,7 @@ import { THEME_PRESETS } from "./themes.js";
 import { autoContrastColor, clamp, normalizeAngle } from "./utils.js";
 
 const TAU = Math.PI * 2;
+const FLASH_MS = 2600;
 const FONT_WHEEL = '"Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
 function easeOutFriction(t) {
@@ -28,6 +29,7 @@ export class WheelEngine {
       lastTickSegment: -1
     };
     this.winnerFlash = { id: null, until: 0 };
+    this.flashRafId = null;
     this.lastVelocity = 0;
     this.imageCache = new Map();
     this.idle = {
@@ -39,13 +41,18 @@ export class WheelEngine {
 
     this.handleResize = this.resize.bind(this);
     window.addEventListener("resize", this.handleResize);
+    // Layout changes (stage mode, panels, fonts) resize the canvas without a window resize.
+    this.resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(this.handleResize) : null;
+    this.resizeObserver?.observe(this.canvas);
     this.resize();
   }
 
   destroy() {
     window.removeEventListener("resize", this.handleResize);
+    this.resizeObserver?.disconnect();
     this.stopAnimation();
     this.stopIdleLoop();
+    cancelAnimationFrame(this.flashRafId);
   }
 
   resize() {
@@ -101,6 +108,7 @@ export class WheelEngine {
   }) {
     if (!this.segmentData.length) return;
     this.idlePausedByResult = false;
+    this.winnerFlash = { id: null, until: 0 };
     this.stopIdleLoop();
     this.stopAnimation();
 
@@ -165,9 +173,16 @@ export class WheelEngine {
   flashWinner(entryId) {
     this.winnerFlash = {
       id: entryId,
-      until: performance.now() + 1800
+      until: performance.now() + FLASH_MS
     };
-    this.render();
+    cancelAnimationFrame(this.flashRafId);
+    const frame = (timestamp) => {
+      this.render();
+      if (timestamp < this.winnerFlash.until) {
+        this.flashRafId = requestAnimationFrame(frame);
+      }
+    };
+    this.flashRafId = requestAnimationFrame(frame);
   }
 
   stopAnimation() {
@@ -183,6 +198,7 @@ export class WheelEngine {
   startManualSpin({ onTick = () => {} } = {}) {
     if (!this.segmentData.length) return;
     this.idlePausedByResult = false;
+    this.winnerFlash = { id: null, until: 0 };
     this.stopIdleLoop();
     this.stopAnimation();
     this.spinState = {
@@ -323,18 +339,24 @@ export class WheelEngine {
     const height = this.canvas.getBoundingClientRect().height;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.48;
+    const outerRadius = Math.min(width, height) * 0.495;
+    const radius = Math.min(width, height) * 0.435;
+    const now = performance.now();
 
     ctx.clearRect(0, 0, width, height);
+    // Hidden canvases (display: none) report a zero size; there is nothing to draw.
+    if (width < 2 || height < 2) return;
 
     if (!this.segmentData.length) {
-      drawEmptyState(ctx, centerX, centerY, radius);
+      drawEmptyState(ctx, centerX, centerY, radius, this.theme);
+      drawRim(ctx, centerX, centerY, radius, outerRadius, this.theme, { now, spinning: false, flashStrength: 0 });
       return;
     }
 
     const performanceMode = Boolean(this.settings?.performanceModeAuto && this.segmentData.length > 500);
     const overviewMode = Boolean(performanceMode && this.settings?.performanceOverview);
     const flashStrength = getWinnerFlashStrength(this.winnerFlash);
+    const spotlight = getSpotlightStrength(this.winnerFlash);
     this.segmentData.forEach((segment, index) => {
       const start = segment.start + this.rotation - Math.PI / 2;
       const end = segment.end + this.rotation - Math.PI / 2;
@@ -355,8 +377,8 @@ export class WheelEngine {
         ctx.restore();
       }
 
-      ctx.strokeStyle = "rgba(0,0,0,0.16)";
-      ctx.lineWidth = performanceMode ? 0.6 : 1.2;
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.lineWidth = performanceMode ? 0.6 : 2;
       ctx.stroke();
 
       if (this.theme?.preset === "colorblind-safe") {
@@ -366,9 +388,22 @@ export class WheelEngine {
       if (!performanceMode) {
         drawSegmentImage(ctx, this, segment, this.rotation, centerX, centerY, radius);
       }
+
+      if (spotlight > 0 && !isWinner) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, start, end);
+        ctx.closePath();
+        ctx.globalAlpha = spotlight * 0.5;
+        ctx.fillStyle = "#1a0508";
+        ctx.fill();
+        ctx.restore();
+      }
     });
 
     drawWheelChrome(ctx, centerX, centerY, radius, flashStrength, this.theme, this, { performanceMode, overviewMode });
+    drawRim(ctx, centerX, centerY, radius, outerRadius, this.theme, { now, spinning: this.isSpinning(), flashStrength });
     if (!overviewMode) {
       this.segmentData.forEach((segment) => {
         drawSegmentLabel(ctx, segment, this.settings, this.rotation, centerX, centerY, radius, {
@@ -447,14 +482,97 @@ export class WheelEngine {
   }
 }
 
-function drawEmptyState(ctx, centerX, centerY, radius) {
+function drawEmptyState(ctx, centerX, centerY, radius, theme) {
+  const colors = getPresetColors(theme?.preset);
+  ctx.save();
   ctx.beginPath();
   ctx.arc(centerX, centerY, radius, 0, TAU);
-  ctx.fillStyle = "#4a1218";
+  ctx.fillStyle = "#ffffff";
   ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.22)";
-  ctx.lineWidth = 2;
+
+  // Ghost slices hint at what the wheel will look like once entries are added.
+  const ghostCount = 12;
+  for (let i = 0; i < ghostCount; i += 1) {
+    const start = (i / ghostCount) * TAU - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, start, start + TAU / ghostCount);
+    ctx.closePath();
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#7a1f2b";
+  ctx.font = `800 ${clamp(radius * 0.085, 13, 26)}px ${FONT_WHEEL}`;
+  ctx.fillText("✨ Vòng quay đang trống", centerX, centerY + radius * 0.46);
+  ctx.fillStyle = "#9b5560";
+  ctx.font = `600 ${clamp(radius * 0.055, 11, 17)}px ${FONT_WHEEL}`;
+  ctx.fillText("Thêm mục để bắt đầu quay nhé!", centerX, centerY + radius * 0.6);
+  ctx.restore();
+}
+
+function getPresetColors(preset) {
+  return (THEME_PRESETS[preset] || THEME_PRESETS.tnty).colors;
+}
+
+// Glossy bezel with marquee bulbs: chase while spinning, blink together on a win.
+function drawRim(ctx, centerX, centerY, radius, outerRadius, theme, { now, spinning, flashStrength }) {
+  let rimColor = getPresetColors(theme?.preset)[0];
+  if (autoContrastColor(rimColor) !== "#f4f8ff") {
+    rimColor = shadeHex(rimColor, -70);
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, outerRadius, 0, TAU);
+  ctx.arc(centerX, centerY, radius, 0, TAU, true);
+  const gradient = ctx.createLinearGradient(centerX - outerRadius, centerY - outerRadius, centerX + outerRadius, centerY + outerRadius);
+  gradient.addColorStop(0, shadeHex(rimColor, 55));
+  gradient.addColorStop(0.5, rimColor);
+  gradient.addColorStop(1, shadeHex(rimColor, -45));
+  ctx.fillStyle = gradient;
+  ctx.fill("evenodd");
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(255,255,255,0.45)";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius + 1, 0, TAU);
   ctx.stroke();
+
+  const rimWidth = outerRadius - radius;
+  const ringRadius = radius + rimWidth / 2;
+  const bulbRadius = Math.max(1.6, rimWidth * 0.2);
+  const count = clamp(Math.round(outerRadius / 22) * 2, 12, 28);
+  const step = Math.floor(now / (spinning ? 85 : 700));
+  for (let i = 0; i < count; i += 1) {
+    const angle = (i / count) * TAU - Math.PI / 2;
+    let lit;
+    if (flashStrength > 0) {
+      lit = flashStrength > 0.5;
+    } else if (spinning) {
+      lit = (i + step) % 3 === 0;
+    } else {
+      lit = (i + step) % 2 === 0;
+    }
+    ctx.beginPath();
+    ctx.arc(centerX + Math.cos(angle) * ringRadius, centerY + Math.sin(angle) * ringRadius, bulbRadius, 0, TAU);
+    if (lit) {
+      ctx.fillStyle = "#fff6d5";
+      ctx.shadowColor = "rgba(255,226,140,0.95)";
+      ctx.shadowBlur = bulbRadius * 3.2;
+    } else {
+      ctx.fillStyle = "rgba(255,255,255,0.38)";
+      ctx.shadowBlur = 0;
+    }
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawWheelChrome(ctx, centerX, centerY, radius, flashStrength, theme, engine, options = {}) {
@@ -516,6 +634,11 @@ function drawWheelChrome(ctx, centerX, centerY, radius, flashStrength, theme, en
     shadowGradient.addColorStop(1, "rgba(0,0,0,0.2)");
     ctx.fillStyle = shadowGradient;
     ctx.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
+    const gloss = ctx.createRadialGradient(centerX - radius * 0.35, centerY - radius * 0.45, 0, centerX - radius * 0.35, centerY - radius * 0.45, radius * 1.1);
+    gloss.addColorStop(0, "rgba(255,255,255,0.22)");
+    gloss.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = gloss;
+    ctx.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
     ctx.restore();
   }
 }
@@ -552,9 +675,16 @@ function drawSegmentLabel(ctx, segment, settings, rotation, centerX, centerY, ra
     renderLabel = truncateToFit(ctx, renderLabel, maxLabelWidth);
   }
 
-  ctx.fillStyle = segment.textColor || "#ffffff";
+  const textColor = segment.textColor || "#ffffff";
+  ctx.fillStyle = textColor;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  if (!simplified && autoContrastColor(textColor) === "#0b1224") {
+    // Light text on a colored slice: a soft shadow keeps it readable.
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = 3;
+    ctx.shadowOffsetY = 1;
+  }
   ctx.fillText(renderLabel, 0, 0);
   ctx.restore();
 }
@@ -659,8 +789,16 @@ function getWinnerFlashStrength(flash) {
   if (!flash.id) return 0;
   const left = flash.until - performance.now();
   if (left <= 0) return 0;
-  const normalized = left / 1800;
-  return Math.sin((1 - normalized) * Math.PI * 4) * 0.5 + 0.5;
+  const normalized = left / FLASH_MS;
+  return Math.sin((1 - normalized) * Math.PI * 6) * 0.5 + 0.5;
+}
+
+function getSpotlightStrength(flash) {
+  if (!flash.id) return 0;
+  const left = flash.until - performance.now();
+  if (left <= 0) return 0;
+  // Ease in quickly, hold, then fade out over the last 600ms.
+  return Math.min(1, (FLASH_MS - left) / 200, left / 600);
 }
 
 function shadeHex(hex, amount) {
@@ -675,26 +813,33 @@ function shadeHex(hex, amount) {
   return `#${channel(0)}${channel(2)}${channel(4)}`;
 }
 
-function buildSegments(entries, weighted, themePreset) {
-  const presetColors = THEME_PRESETS[themePreset]?.colors || THEME_PRESETS.rainbow.colors;
+export function buildSegments(entries, weighted, themePreset) {
+  const presetColors = getPresetColors(themePreset);
   const weights = entries.map((entry) => weighted ? clamp(Number(entry.weight) || 1, 0.1, 100) : 1);
   const totalWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
   let cursor = 0;
-  return entries.map((entry, index) => {
+  const segments = [];
+  entries.forEach((entry, index) => {
     const ratio = weights[index] / totalWeight;
     const span = ratio * TAU;
     const start = cursor;
     const end = cursor + span;
     cursor = end;
-    const color = entry.sliceColor || presetColors[index % presetColors.length];
+    let color = entry.sliceColor || presetColors[index % presetColors.length];
+    // When the palette wraps, the last slice can land next to an identical first slice.
+    if (!entry.sliceColor && index > 0 && index === entries.length - 1 && color === segments[0].color) {
+      color = presetColors.find((c) => c !== segments[0].color && c !== segments[index - 1].color) || color;
+    }
     const textColor = entry.textColor || autoContrastColor(color);
-    return {
+    segments.push({
       entry,
       start,
       end,
       center: start + span / 2,
       color,
-      textColor
-    };
+      textColor,
+      chance: ratio
+    });
   });
+  return segments;
 }

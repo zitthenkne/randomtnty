@@ -1,10 +1,23 @@
-import { DEFAULT_STATE, SCHEMA_VERSION } from "./defaults.js";
+import { DEFAULT_STATE, SCHEMA_VERSION, createEntry } from "./defaults.js";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
+const ENTRY_DEFAULTS = createEntry("");
 
 export function encodeWheelConfig(config, { spinOnly = false } = {}) {
-  const stripped = stripDefaults(config, DEFAULT_STATE);
+  // Share only what defines the wheel: no history, ids, UI state or untouched multi-wheel data.
+  // Keeps links short enough to fit in a QR code.
+  const shareable = {
+    ...config,
+    results: [],
+    entries: (config.entries || []).map(({ id, winCount, ...entry }) => stripDefaults(entry, ENTRY_DEFAULTS))
+  };
+  delete shareable.ui;
+  delete shareable.tournament;
+  if (!config.multiWheel?.enabled) {
+    delete shareable.multiWheel;
+  }
+  const stripped = stripDefaults(shareable, DEFAULT_STATE);
   if (spinOnly) {
     stripped.settings = {
       ...(stripped.settings || {}),
@@ -46,6 +59,9 @@ export function decodeWheelConfig(encoded) {
 
   const parsed = JSON.parse(json);
   parsed.schemaVersion = SCHEMA_VERSION;
+  if (Array.isArray(parsed.entries)) {
+    parsed.entries = parsed.entries.map((entry) => createEntry(entry.label ?? "", entry));
+  }
   return parsed;
 }
 

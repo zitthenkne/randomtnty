@@ -3,7 +3,8 @@ export const STORAGE_KEYS = {
   language: "wheel_spinner_language",
   themeMode: "wheel_spinner_theme_mode",
   firstRunHintDismissed: "wheel_spinner_hint_dismissed",
-  recentWheels: "wheel_spinner_recent_wheels"
+  recentWheels: "wheel_spinner_recent_wheels",
+  brandMigrated: "wheel_spinner_tnty_brand_v1"
 };
 
 export function clamp(value, min, max) {
