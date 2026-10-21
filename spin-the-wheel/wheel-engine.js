@@ -550,6 +550,15 @@ function drawRim(ctx, centerX, centerY, radius, outerRadius, theme, { now, spinn
   const bulbRadius = Math.max(1.6, rimWidth * 0.2);
   const count = clamp(Math.round(outerRadius / 22) * 2, 12, 28);
   const step = Math.floor(now / (spinning ? 85 : 700));
+  // Batch all bulbs into four paths: one fill per layer keeps the rim cheap to repaint every frame.
+  const unlit = new Path2D();
+  const core = new Path2D();
+  const haloInner = new Path2D();
+  const haloOuter = new Path2D();
+  const addCircle = (path, x, y, r) => {
+    path.moveTo(x + r, y);
+    path.arc(x, y, r, 0, TAU);
+  };
   for (let i = 0; i < count; i += 1) {
     const angle = (i / count) * TAU - Math.PI / 2;
     let lit;
@@ -560,18 +569,24 @@ function drawRim(ctx, centerX, centerY, radius, outerRadius, theme, { now, spinn
     } else {
       lit = (i + step) % 2 === 0;
     }
-    ctx.beginPath();
-    ctx.arc(centerX + Math.cos(angle) * ringRadius, centerY + Math.sin(angle) * ringRadius, bulbRadius, 0, TAU);
+    const x = centerX + Math.cos(angle) * ringRadius;
+    const y = centerY + Math.sin(angle) * ringRadius;
     if (lit) {
-      ctx.fillStyle = "#fff6d5";
-      ctx.shadowColor = "rgba(255,226,140,0.95)";
-      ctx.shadowBlur = bulbRadius * 3.2;
+      addCircle(haloOuter, x, y, bulbRadius * 2.4);
+      addCircle(haloInner, x, y, bulbRadius * 1.6);
+      addCircle(core, x, y, bulbRadius);
     } else {
-      ctx.fillStyle = "rgba(255,255,255,0.38)";
-      ctx.shadowBlur = 0;
+      addCircle(unlit, x, y, bulbRadius);
     }
-    ctx.fill();
   }
+  ctx.fillStyle = "rgba(255,255,255,0.38)";
+  ctx.fill(unlit);
+  ctx.fillStyle = "rgba(255,226,140,0.22)";
+  ctx.fill(haloOuter);
+  ctx.fillStyle = "rgba(255,226,140,0.4)";
+  ctx.fill(haloInner);
+  ctx.fillStyle = "#fff6d5";
+  ctx.fill(core);
   ctx.restore();
 }
 
@@ -680,10 +695,10 @@ function drawSegmentLabel(ctx, segment, settings, rotation, centerX, centerY, ra
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   if (!simplified && autoContrastColor(textColor) === "#0b1224") {
-    // Light text on a colored slice: a soft shadow keeps it readable.
-    ctx.shadowColor = "rgba(0,0,0,0.35)";
-    ctx.shadowBlur = 3;
-    ctx.shadowOffsetY = 1;
+    // Light text on a colored slice: a soft offset copy keeps it readable (cheaper than shadowBlur).
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.fillText(renderLabel, 0, 1.5);
+    ctx.fillStyle = textColor;
   }
   ctx.fillText(renderLabel, 0, 0);
   ctx.restore();

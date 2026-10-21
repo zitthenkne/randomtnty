@@ -112,7 +112,7 @@
   "weight": "Trọng số",
   "wins_short": "Thắng",
   "delete_entry": "Xóa mục",
-  "no_results": "Chưa có kết quả.",
+  "no_results": "📜 Chưa có kết quả nào, quay thử đi nè!",
   "template_confirm_replace": "Thay danh sách hiện tại bằng mẫu này?",
   "template_applied": "Đã áp dụng mẫu.",
   "nothing_to_import": "Không có dữ liệu để nhập.",
@@ -380,7 +380,7 @@
   "mode_team_picker": "Người chọn đội",
   "my_wheels": "Bánh xe của tôi",
   "mystery_wheel": "Bánh xe bí ẩn",
-  "no_saved_wheels": "Chưa có bánh xe nào được lưu.",
+  "no_saved_wheels": "📭 Chưa có bánh xe nào được lưu.",
   "no_team_assignments": "Chưa có bài tập nhóm nào.",
   "none": "Không có",
   "number_count": "Số lượng chọn",
@@ -466,7 +466,7 @@
   "win_chime": "chuông",
   "win_fanfare": "phô trương",
   "win_sparkle": "lấp lánh",
-  "no_stats_yet": "Chưa có thống kê. Quay để bắt đầu.",
+  "no_stats_yet": "📊 Chưa có thống kê. Quay để bắt đầu nhé!",
   "mode_single_wheel": "1 Bánh xe",
   "mode_multi_wheel": "Nhiều vòng quay",
   "mode_batch_draw": "Rút hàng loạt",
@@ -519,5 +519,6 @@
   "winner_card_copy": "Sao chép ảnh",
   "winner_card_btn": "Tạo thiệp vinh danh",
   "multi_presets": "Mẫu phối hợp",
-  "multi_preset_select": "Chọn mẫu phối hợp"
+  "multi_preset_select": "Chọn mẫu phối hợp",
+  "win_sound_variant": "Kiểu âm chiến thắng"
 }

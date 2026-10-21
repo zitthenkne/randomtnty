@@ -123,6 +123,13 @@
   }
   </script>
 
+  <script>
+    try {
+      var saved = localStorage.getItem("wheel_spinner_theme_mode");
+      var mode = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", mode === "dark" ? "dark" : "light");
+    } catch (e) { document.documentElement.setAttribute("data-theme", "light"); }
+  </script>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="logo_clb.png">
   <link rel="icon" type="image/png" sizes="512x512" href="logo_clb.png">
@@ -131,7 +138,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lexend:wght@700;800;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&family=Baloo+2:wght@600;700;800&family=Lexend:wght@700;800;900&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -266,7 +273,7 @@
         <nav class="panel-tabs" data-i18n-aria-label="panel_tabs_aria">
           <button class="tab-btn active" type="button" data-tab="entries"><span data-i18n="entries_tab"></span><span id="entriesTabCount" class="tab-count">0</span></button>
           <button class="tab-btn" type="button" data-tab="results"><span data-i18n="results_tab"></span><span id="resultsTabCount" class="tab-count">0</span></button>
-          <button id="factoryResetButton" class="tab-btn tab-reset-btn" type="button" data-i18n="reset_app" data-i18n-title="reset_app_tooltip" data-i18n-aria-label="reset_app_tooltip"></button>
+          <button id="factoryResetButton" class="tab-btn tab-reset-btn" type="button" data-icon="↺" data-i18n="reset_app" data-i18n-title="reset_app_tooltip" data-i18n-aria-label="reset_app_tooltip"></button>
         </nav>
 
         <section id="entriesTab" class="panel-tab active" role="region" data-i18n-aria-label="entries_tab" data-drop-label="📥 Thả file vào đây để nhập danh sách">
@@ -332,8 +339,8 @@
     </main>
 
     <footer class="app-footer" role="contentinfo">
-      <p>© CLB Tình Nguyện Trường Y — Man in Red</p>
-      <p class="creator-credit">Tạo bởi <strong>Việt Thanh - Y23C - 17 - PRIT</strong></p>
+      <p>❤ CLB Tình Nguyện Trường Y — Man in Red</p>
+      <p class="creator-credit">Làm với 💖 bởi <strong>Việt Thanh - Y23C - 17 - PRIT</strong></p>
     </footer>
 
     <button id="floatingSpinButton" class="floating-spin hidden" type="button" data-i18n="spin_button"></button>
@@ -349,17 +356,17 @@
     <section id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
       <div class="modal-card settings-modal-card">
         <div class="panel-topline">
-          <h2 id="settingsModalTitle" data-i18n="settings"></h2>
+          <h2 id="settingsModalTitle" data-icon="⚙️" data-i18n="settings"></h2>
           <button id="closeSettingsButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
         <div class="settings-modal-shell">
           <nav class="settings-modal-tabs" data-i18n-aria-label="settings_tabs_aria">
-            <button class="settings-modal-tab active" type="button" data-settings-tab="general" data-i18n="general"></button>
-            <button class="settings-modal-tab" type="button" data-settings-tab="spin" data-i18n="spin_section"></button>
-            <button class="settings-modal-tab" type="button" data-settings-tab="theme" data-i18n="theme_section"></button>
-            <button class="settings-modal-tab" type="button" data-settings-tab="sound" data-i18n="sound_section"></button>
-            <button class="settings-modal-tab" type="button" data-settings-tab="effects" data-i18n="effects_section"></button>
-            <button class="settings-modal-tab" type="button" data-settings-tab="probability" data-i18n="probability_inspector"></button>
+            <button class="settings-modal-tab active" type="button" data-settings-tab="general" data-icon="🎛️" data-i18n="general"></button>
+            <button class="settings-modal-tab" type="button" data-settings-tab="spin" data-icon="🎡" data-i18n="spin_section"></button>
+            <button class="settings-modal-tab" type="button" data-settings-tab="theme" data-icon="🎨" data-i18n="theme_section"></button>
+            <button class="settings-modal-tab" type="button" data-settings-tab="sound" data-icon="🔊" data-i18n="sound_section"></button>
+            <button class="settings-modal-tab" type="button" data-settings-tab="effects" data-icon="✨" data-i18n="effects_section"></button>
+            <button class="settings-modal-tab" type="button" data-settings-tab="probability" data-icon="📊" data-i18n="probability_inspector"></button>
           </nav>
 
           <div class="settings-modal-panels">
@@ -526,7 +533,7 @@
 
     <section id="pasteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="pasteModalTitle">
       <div class="modal-card">
-        <h2 id="pasteModalTitle" data-i18n="paste_list"></h2>
+        <h2 id="pasteModalTitle" data-icon="📋" data-i18n="paste_list"></h2>
         <textarea id="pasteTextarea" rows="10" data-i18n-placeholder="paste_placeholder"></textarea>
         <div class="modal-actions">
           <button id="importDataButton" class="ghost-btn" type="button" data-i18n="import_csv_json"></button>
@@ -576,7 +583,7 @@
     <section id="batchDrawModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="batchDrawTitle">
       <div class="modal-card">
         <div class="panel-topline">
-          <h2 id="batchDrawTitle" data-i18n="batch_draw_title">⚡ Rút thăm hàng loạt</h2>
+          <h2 id="batchDrawTitle" data-icon="⚡" data-i18n="batch_draw_title">⚡ Rút thăm hàng loạt</h2>
           <button id="closeBatchDrawButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
         <div class="batch-config-grid">
@@ -620,7 +627,7 @@
     <section id="teamGeneratorModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="teamGenTitle">
       <div class="modal-card" style="max-width: 52rem;">
         <div class="panel-topline">
-          <h2 id="teamGenTitle" data-i18n="team_gen_title">👥 Chia nhóm & Phân đội ngẫu nhiên</h2>
+          <h2 id="teamGenTitle" data-icon="👥" data-i18n="team_gen_title">👥 Chia nhóm & Phân đội ngẫu nhiên</h2>
           <button id="closeTeamGenButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
         
@@ -752,7 +759,7 @@
     <section id="quickToolsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="quickToolsTitle">
       <div class="modal-card" style="max-width: 44rem;">
         <div class="panel-topline">
-          <h2 id="quickToolsTitle" data-i18n="quick_tools_title">🎲 Bộ công cụ ngẫu nhiên tức thì</h2>
+          <h2 id="quickToolsTitle" data-icon="🎲" data-i18n="quick_tools_title">🎲 Bộ công cụ ngẫu nhiên tức thì</h2>
           <button id="closeQuickToolsButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
 
@@ -886,7 +893,7 @@
     <section id="winnerCardModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="winnerCardTitle">
       <div class="modal-card" style="max-width: 44rem;">
         <div class="panel-topline">
-          <h2 id="winnerCardTitle" data-i18n="winner_card_title">🏆 Thiệp Vinh Danh Chiến Thắng</h2>
+          <h2 id="winnerCardTitle" data-icon="🏆" data-i18n="winner_card_title">🏆 Thiệp Vinh Danh Chiến Thắng</h2>
           <button id="closeWinnerCardButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
         <div class="winner-card-canvas-wrap">
@@ -904,7 +911,7 @@
     <section id="multiPresetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="multiPresetTitle">
       <div class="modal-card template-card">
         <div class="panel-topline">
-          <h2 id="multiPresetTitle" data-i18n="multi_presets">🎭 Mẫu phối hợp nhiều vòng quay</h2>
+          <h2 id="multiPresetTitle" data-icon="🎭" data-i18n="multi_presets">🎭 Mẫu phối hợp nhiều vòng quay</h2>
           <button id="closeMultiPresetButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
         <div id="multiPresetGrid" class="template-grid"></div>
@@ -913,7 +920,7 @@
 
     <section id="prizeModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="prizeModalTitle">
       <div class="modal-card">
-        <h2 id="prizeModalTitle">🏅 Danh sách giải thưởng</h2>
+        <h2 id="prizeModalTitle" data-icon="🏅">Danh sách giải thưởng</h2>
         <p class="small-note">Mỗi dòng một giải, theo thứ tự trao (thường từ giải nhỏ đến giải lớn). Mỗi lượt quay trao giải kế tiếp.</p>
         <textarea id="prizeListInput" rows="7" placeholder="Giải Ba 🥉&#10;Giải Nhì 🥈&#10;Giải Nhất 🥇"></textarea>
         <p id="prizeProgressNote" class="small-note"></p>
@@ -927,6 +934,7 @@
 
     <section id="factoryResetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="factoryResetTitle" aria-describedby="factoryResetDescription">
       <div class="modal-card confirm-card">
+        <div class="confirm-icon" aria-hidden="true"></div>
         <h2 id="factoryResetTitle"></h2>
         <p id="factoryResetDescription" class="small-note"></p>
         <div class="modal-actions">
@@ -937,34 +945,41 @@
     </section>
 
     <section id="shareModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
-      <div class="modal-card">
-        <h2 id="shareTitle" data-i18n="share_wheel"></h2>
+      <div class="modal-card share-card">
+        <h2 id="shareTitle" data-icon="🔗" data-i18n="share_wheel"></h2>
         <p class="small-note" data-i18n="share_privacy_note"></p>
-        <fieldset class="radio-group">
+        <fieldset class="radio-group radio-cards">
           <legend data-i18n="share_mode"></legend>
-          <label><input type="radio" name="shareMode" value="full" checked> <span data-i18n="share_full_edit"></span></label>
-          <label><input type="radio" name="shareMode" value="spin-only"> <span data-i18n="share_spin_only"></span></label>
+          <label><input type="radio" name="shareMode" value="full" checked> <span>✏️ <span data-i18n="share_full_edit"></span></span></label>
+          <label><input type="radio" name="shareMode" value="spin-only"> <span>🎯 <span data-i18n="share_spin_only"></span></span></label>
         </fieldset>
-        <label for="shareUrlInput" data-i18n="share_link"></label>
-        <input id="shareUrlInput" type="text" readonly>
-        <p id="shareSizeStatus" class="size-status"></p>
-        <fieldset class="radio-group">
-          <legend data-i18n="embed_title"></legend>
-          <label for="embedWidthInput" data-i18n="embed_width"></label>
-          <input id="embedWidthInput" type="number" min="280" max="2000" step="10" value="720">
-          <label for="embedHeightInput" data-i18n="embed_height"></label>
-          <input id="embedHeightInput" type="number" min="280" max="2000" step="10" value="720">
-          <label for="embedCodeInput" data-i18n="embed_code"></label>
-          <textarea id="embedCodeInput" rows="3" readonly></textarea>
-          <button id="copyEmbedButton" class="ghost-btn" type="button" data-i18n="copy_embed_code"></button>
-        </fieldset>
-        <fieldset class="radio-group">
-          <legend data-i18n="qr_code"></legend>
-          <canvas id="qrCanvas" width="220" height="220" data-i18n-aria-label="qr_code"></canvas>
-          <button id="downloadQrButton" class="ghost-btn" type="button" data-i18n="download_qr"></button>
-        </fieldset>
+        <div class="share-main">
+          <div class="share-link-col">
+            <label for="shareUrlInput" class="field-label" data-i18n="share_link"></label>
+            <div class="share-link-row">
+              <input id="shareUrlInput" type="text" readonly>
+              <button id="copyShareButton" class="accent-btn" type="button" data-icon="📋" data-i18n="copy_link"></button>
+            </div>
+            <p id="shareSizeStatus" class="size-status"></p>
+          </div>
+          <div class="share-qr">
+            <canvas id="qrCanvas" width="220" height="220" data-i18n-aria-label="qr_code"></canvas>
+            <button id="downloadQrButton" class="ghost-btn" type="button" data-icon="⬇️" data-i18n="download_qr"></button>
+          </div>
+        </div>
+        <details class="embed-details">
+          <summary>🧩 <span data-i18n="embed_title"></span> vào website <small>(nâng cao)</small></summary>
+          <div class="embed-grid">
+            <label for="embedWidthInput" data-i18n="embed_width"></label>
+            <input id="embedWidthInput" type="number" min="280" max="2000" step="10" value="720">
+            <label for="embedHeightInput" data-i18n="embed_height"></label>
+            <input id="embedHeightInput" type="number" min="280" max="2000" step="10" value="720">
+            <label for="embedCodeInput" data-i18n="embed_code"></label>
+            <textarea id="embedCodeInput" rows="3" readonly></textarea>
+            <button id="copyEmbedButton" class="ghost-btn" type="button" data-icon="📋" data-i18n="copy_embed_code"></button>
+          </div>
+        </details>
         <div class="modal-actions">
-          <button id="copyShareButton" class="accent-btn" type="button" data-i18n="copy_link"></button>
           <button id="closeShareButton" class="ghost-btn" type="button" data-i18n="close"></button>
         </div>
       </div>
@@ -972,7 +987,7 @@
 
     <section id="libraryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="libraryTitle">
       <div class="modal-card template-card">
-        <h2 id="libraryTitle" data-i18n="my_wheels"></h2>
+        <h2 id="libraryTitle" data-icon="📚" data-i18n="my_wheels"></h2>
         <div id="libraryList" class="library-list"></div>
         <div class="modal-actions">
           <button id="closeLibraryButton" class="ghost-btn" type="button" data-i18n="close"></button>
@@ -982,7 +997,7 @@
 
     <section id="csvMapModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="csvMapTitle">
       <div class="modal-card">
-        <h2 id="csvMapTitle" data-i18n="csv_mapping_title"></h2>
+        <h2 id="csvMapTitle" data-icon="🗂️" data-i18n="csv_mapping_title"></h2>
         <div class="settings-grid">
           <label for="csvLabelColumn" data-i18n="csv_label_column"></label>
           <select id="csvLabelColumn"></select>
@@ -1000,7 +1015,7 @@
 
     <section id="exportModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle">
       <div class="modal-card">
-        <h2 id="exportModalTitle" data-i18n="export_title"></h2>
+        <h2 id="exportModalTitle" data-icon="📤" data-i18n="export_title"></h2>
         <fieldset class="radio-group">
           <legend data-i18n="export_format"></legend>
           <label><input type="radio" name="exportFormat" value="csv" checked> <span data-i18n="export_csv"></span></label>
@@ -1015,7 +1030,7 @@
 
     <section id="historyModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
       <div class="modal-card template-card">
-        <h2 id="historyTitle" data-i18n="history"></h2>
+        <h2 id="historyTitle" data-icon="📜" data-i18n="history"></h2>
         <div id="resultsList" class="results-list"></div>
         <div class="modal-actions">
           <button id="clearResultsButton" class="ghost-btn danger-btn" type="button" data-i18n="clear_results"></button>
@@ -1028,7 +1043,7 @@
 
     <section id="templateModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="templateTitle">
       <div class="modal-card template-card">
-        <h2 id="templateTitle" data-i18n="templates"></h2>
+        <h2 id="templateTitle" data-icon="🧩" data-i18n="templates"></h2>
         <div id="templateGrid" class="template-grid"></div>
         <div class="modal-actions">
           <button id="closeTemplateButton" class="ghost-btn" type="button" data-i18n="close"></button>
@@ -1038,7 +1053,7 @@
 
     <section id="shortcutModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="shortcutTitle">
       <div class="modal-card">
-        <h2 id="shortcutTitle" data-i18n="shortcuts"></h2>
+        <h2 id="shortcutTitle" data-icon="⌨️" data-i18n="shortcuts"></h2>
         <ul class="shortcut-list">
           <li><kbd>Space</kbd> hoặc <kbd>Ctrl</kbd> + <kbd>K</kbd> — Quay (khi đang xem kết quả: quay lại)</li>
           <li>🖐 Kéo / vuốt bánh xe — Quay bằng lực tay (vuốt càng mạnh, quay càng nhiều vòng)</li>

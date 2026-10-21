@@ -355,6 +355,7 @@ let knownEntryIds = null;
 let qrLibPromise = null;
 
 let countdownActive = false;
+let winnerCardRenderId = 0;
 let currentResultPrize = "";
 let mascotMood = "";
 let suppressCanvasClick = false;
@@ -449,9 +450,35 @@ function clearPendingResultModal() {
   pendingResultModalTimeoutId = null;
 }
 
+function syncRangeFill(input) {
+  const min = Number(input.min) || 0;
+  const max = Number(input.max) || 100;
+  const ratio = (Number(input.value) - min) / (max - min || 1);
+  input.style.setProperty("--fill", `${Math.min(1, Math.max(0, ratio)) * 100}%`);
+}
+
+function syncRangeFills() {
+  document.querySelectorAll("input[type='range']").forEach(syncRangeFill);
+}
+
+function decorateModals() {
+  // Close buttons in modal headers become round ✕ buttons.
+  document.querySelectorAll(".modal .panel-topline > .ghost-btn").forEach((button) => {
+    button.classList.add("modal-close");
+    button.setAttribute("aria-label", "Đóng");
+    button.title = "Đóng (Esc)";
+  });
+  document.addEventListener("input", (event) => {
+    if (event.target instanceof HTMLInputElement && event.target.type === "range") {
+      syncRangeFill(event.target);
+    }
+  });
+}
+
 function openModal(modalElement) {
   closeModal();
   activeModal = modalElement;
+  syncRangeFills();
   document.body.classList.add("modal-open");
   modalElement.classList.remove("hidden");
 }
@@ -526,6 +553,7 @@ function requestAppConfirm({ titleKey, messageKey, confirmKey = "apply", danger 
   dom.factoryResetTitle.textContent = t(titleKey);
   dom.factoryResetDescription.textContent = t(messageKey);
   dom.factoryResetConfirmButton.textContent = t(confirmKey);
+  dom.factoryResetModal.dataset.tone = danger ? "danger" : "info";
 
   if (danger) {
     dom.factoryResetConfirmButton.classList.remove("accent-btn");
@@ -909,7 +937,7 @@ async function renderQr(text) {
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#7a1f2b";
-    ctx.font = "600 14px 'Be Vietnam Pro', sans-serif";
+    ctx.font = "600 14px 'Nunito', sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(message, canvas.width / 2, canvas.height / 2);
   };
@@ -960,6 +988,8 @@ function updateThemeVars(themeState) {
   const pagePalette = mode === "light" ? preset.pageLight : preset.pageDark;
   dom.app.setAttribute("data-theme", mode);
   document.body.setAttribute("data-theme", mode);
+  // The early inline script in <head> sets this too, so the first paint already uses the right palette.
+  document.documentElement.setAttribute("data-theme", mode);
 
   document.documentElement.style.setProperty("--bg-base", pagePalette.bg);
   document.documentElement.style.setProperty("--bg-surface", pagePalette.surface);
@@ -2012,18 +2042,18 @@ function buildResultCardImageData() {
   ctx.fill();
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = '700 48px "Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
+  ctx.font = '700 48px "Lexend", "Nunito", "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = "center";
   ctx.fillText(t("winner"), canvas.width / 2, 210);
-  ctx.font = '800 102px "Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
+  ctx.font = '800 102px "Lexend", "Nunito", "Plus Jakarta Sans", sans-serif';
   const winnerText = latest.label.length > 22 ? `${latest.label.slice(0, 22)}...` : latest.label;
   ctx.fillText(winnerText, canvas.width / 2, 430);
 
-  ctx.font = '500 34px "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
+  ctx.font = '500 34px "Nunito", "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.fillText(formatTimestamp(latest.timestamp, getCurrentLanguage()), canvas.width / 2, 560);
   ctx.fillStyle = "rgba(255,255,255,0.75)";
-  ctx.font = '600 30px "Lexend", "Be Vietnam Pro", "Plus Jakarta Sans", sans-serif';
+  ctx.font = '600 30px "Lexend", "Nunito", "Plus Jakarta Sans", sans-serif';
   ctx.fillText("CLB Tình Nguyện Trường Y", canvas.width / 2, 1020);
 
   return canvas.toDataURL("image/png");
@@ -3135,12 +3165,12 @@ function exportTeamDiagramImage() {
   ctx.strokeRect(20, 20, width - 40, height - 40);
 
   // Header Title
-  ctx.font = "bold 32px 'Be Vietnam Pro', sans-serif";
+  ctx.font = "bold 32px 'Nunito', sans-serif";
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.fillText("CLB TÌNH NGUYỆN TRƯỜNG Y - MAN IN RED", width / 2, 70);
 
-  ctx.font = "bold 20px 'Be Vietnam Pro', sans-serif";
+  ctx.font = "bold 20px 'Nunito', sans-serif";
   ctx.fillStyle = "#ffb3ba";
   ctx.fillText("BẢNG PHÂN CHIA ĐỘI HOẠT ĐỘNG", width / 2, 105);
 
@@ -3180,13 +3210,13 @@ function exportTeamDiagramImage() {
     ctx.roundRect(x, y, cardW, 42, [12, 12, 0, 0]);
     ctx.fill();
 
-    ctx.font = "bold 16px 'Be Vietnam Pro', sans-serif";
+    ctx.font = "bold 16px 'Nunito', sans-serif";
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "left";
     ctx.fillText(`${team.name} (${team.members.length})`, x + 14, y + 26);
 
     // Member list
-    ctx.font = "14px 'Be Vietnam Pro', sans-serif";
+    ctx.font = "14px 'Nunito', sans-serif";
     ctx.fillStyle = "#e2e8f0";
     let my = y + 66;
     team.members.slice(0, 7).forEach((m, mIdx) => {
@@ -3470,109 +3500,204 @@ function openWinnerCardModal(payload = null) {
   openModal(dom.winnerCardModal);
 }
 
-function drawWinnerCardCanvas(payload) {
+async function drawWinnerCardCanvas(payload) {
   const canvas = dom.winnerCardCanvas;
   if (!canvas) return;
+  const renderId = ++winnerCardRenderId;
+  const winnerName = String(payload.winnerName || "Người Chiến Thắng");
+  const [logo] = await Promise.all([
+    loadImage(new URL("logo_clb.png", document.baseURI).href).catch(() => null),
+    document.fonts?.load('800 80px "Baloo 2"', winnerName).catch(() => {}),
+    document.fonts?.load('800 24px "Nunito"', "CHÚC MỪNG CHIẾN THẮNG").catch(() => {})
+  ]);
+  if (renderId !== winnerCardRenderId) return;
+
   const ctx = canvas.getContext("2d");
-  const width = 1200;
-  const height = 630;
-  canvas.width = width;
-  canvas.height = height;
+  const W = 1200;
+  const H = 630;
+  const TAU = Math.PI * 2;
+  const DISPLAY = '"Baloo 2", "Nunito", sans-serif';
+  const BODY = '"Nunito", sans-serif';
+  canvas.width = W;
+  canvas.height = H;
+  const cx = W / 2;
 
-  // Background Gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-  bgGrad.addColorStop(0, "#160305");
-  bgGrad.addColorStop(0.4, "#2b070d");
-  bgGrad.addColorStop(1, "#120204");
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, width, height);
+  // Soft pastel background with colored glows.
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#fff4f5");
+  bg.addColorStop(0.55, "#ffe3e8");
+  bg.addColorStop(1, "#dff1fb");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  [[120, 90, 280, "rgba(255,143,171,0.5)"], [1100, 570, 320, "rgba(56,189,248,0.4)"], [1090, 50, 190, "rgba(255,214,102,0.4)"]].forEach(([x, y, r, color]) => {
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r);
+    glow.addColorStop(0, color);
+    glow.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+  });
 
-  // Decorative ambient circles
-  ctx.save();
-  ctx.strokeStyle = "rgba(230, 57, 70, 0.12)";
-  ctx.lineWidth = 2;
-  for (let r = 100; r <= 540; r += 75) {
-    ctx.beginPath();
-    ctx.arc(width / 2, height / 2, r, 0, Math.PI * 2);
-    ctx.stroke();
+  // Confetti around the card (deterministic, so the card looks the same every redraw).
+  let seed = 11;
+  const rnd = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const palette = ["#e63946", "#ff8fab", "#ffd166", "#38bdf8", "#7dd3a8", "#b197fc"];
+  for (let i = 0; i < 60; i += 1) {
+    const x = rnd() * W;
+    const y = rnd() * H;
+    const angle = rnd() * Math.PI;
+    if (x > 70 && x < 1130 && y > 100 && y < 590) continue;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle = palette[i % palette.length];
+    if (i % 3 === 0) {
+      ctx.fillRect(-8, -3.5, 16, 7);
+    } else if (i % 3 === 1) {
+      ctx.beginPath();
+      ctx.arc(0, 0, 5.5, 0, TAU);
+      ctx.fill();
+    } else {
+      drawHeartShape(ctx, 20);
+    }
+    ctx.restore();
   }
-  ctx.restore();
 
-  // Golden Outer Border
+  // White card with a gradient rim.
+  const cardX = 80;
+  const cardY = 118;
+  const cardW = 1040;
+  const cardH = 490;
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.4)";
-  ctx.lineWidth = 4;
-  ctx.strokeRect(30, 30, width - 60, height - 60);
-  ctx.strokeStyle = "rgba(230, 57, 70, 0.5)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(40, 40, width - 80, height - 80);
-
-  // Corner Accents
-  const cornerSize = 30;
-  ctx.strokeStyle = "#ffd700";
-  ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.moveTo(25, 25 + cornerSize); ctx.lineTo(25, 25); ctx.lineTo(25 + cornerSize, 25); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(width - 25 - cornerSize, 25); ctx.lineTo(width - 25, 25); ctx.lineTo(width - 25, 25 + cornerSize); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(25, height - 25 - cornerSize); ctx.lineTo(25, height - 25); ctx.lineTo(25 + cornerSize, height - 25); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(width - 25 - cornerSize, height - 25); ctx.lineTo(width - 25, height - 25); ctx.lineTo(width - 25, height - 25 - cornerSize); ctx.stroke();
-  ctx.restore();
-
-  // Header: Club Branding
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  ctx.fillStyle = "#ff4757";
-  ctx.font = "bold 24px 'Lexend', sans-serif";
-  ctx.fillText("❤ CLB TÌNH NGUYỆN TRƯỜNG Y — MAN IN RED ❤", width / 2, 95);
-
-  // Main Title: CHỨC MỪNG CHIẾN THẮNG
-  ctx.fillStyle = "#ffd700";
-  ctx.font = "900 44px 'Lexend', sans-serif";
-  ctx.shadowColor = "rgba(255, 215, 0, 0.4)";
-  ctx.shadowBlur = 15;
-  ctx.fillText("🏆 CHỨC MỪNG CHIẾN THẮNG 🏆", width / 2, 155);
-  ctx.shadowBlur = 0;
-
-  // Winner Card Box in center
-  const boxWidth = 980;
-  const boxHeight = 220;
-  const boxX = (width - boxWidth) / 2;
-  const boxY = 215;
-
-  ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
-  ctx.lineWidth = 3;
+  ctx.shadowColor = "rgba(160,30,55,0.28)";
+  ctx.shadowBlur = 44;
+  ctx.shadowOffsetY = 20;
+  ctx.fillStyle = "#ffffff";
   ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 20);
+  ctx.roundRect(cardX, cardY, cardW, cardH, 52);
   ctx.fill();
+  ctx.restore();
+  const rim = ctx.createLinearGradient(cardX, 0, cardX + cardW, 0);
+  rim.addColorStop(0, "#e63946");
+  rim.addColorStop(0.5, "#ff8fab");
+  rim.addColorStop(1, "#38bdf8");
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = rim;
+  ctx.beginPath();
+  ctx.roundRect(cardX + 3, cardY + 3, cardW - 6, cardH - 6, 49);
   ctx.stroke();
 
-  // Winner Name
+  // Club logo badge overlapping the top edge.
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.25)";
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 7;
   ctx.fillStyle = "#ffffff";
-  ctx.font = "900 56px 'Lexend', 'Be Vietnam Pro', sans-serif";
-  ctx.shadowColor = "rgba(230, 57, 70, 0.9)";
-  ctx.shadowBlur = 14;
-  const winnerName = payload.winnerName || "Người Chiến Thắng";
-  ctx.fillText(winnerName, width / 2, boxY + 85);
-  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.arc(cx, cardY, 76, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+  if (logo) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cardY, 65, 0, TAU);
+    ctx.clip();
+    ctx.drawImage(logo, cx - 65, cardY - 65, 130, 130);
+    ctx.restore();
+  }
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#e63946";
+  ctx.beginPath();
+  ctx.arc(cx, cardY, 71, 0, TAU);
+  ctx.stroke();
 
-  // Subtitle / Wheel / Prize
-  if (payload.subtitle || payload.wheelTitle) {
-    ctx.fillStyle = "#ffd166";
-    ctx.font = "600 25px 'Be Vietnam Pro', sans-serif";
-    const sub = payload.subtitle ? `${payload.wheelTitle ? payload.wheelTitle + " • " : ""}${payload.subtitle}` : payload.wheelTitle || "";
-    ctx.fillText(sub, width / 2, boxY + 155);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const spaced = (text, spacing, x, y) => {
+    if ("letterSpacing" in ctx) ctx.letterSpacing = `${spacing}px`;
+    ctx.fillText(text, x, y);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+  };
+
+  ctx.fillStyle = "#e63946";
+  ctx.font = `800 22px ${BODY}`;
+  spaced("CLB TÌNH NGUYỆN TRƯỜNG Y · MAN IN RED", 3, cx, cardY + 118);
+
+  ctx.fillStyle = "#4a1018";
+  ctx.font = `800 50px ${DISPLAY}`;
+  ctx.fillText("🏆 CHÚC MỪNG CHIẾN THẮNG 🏆", cx, cardY + 172);
+
+  const prize = String(payload.subtitle || "").trim();
+  let nameY = cardY + 296;
+  if (prize) {
+    ctx.font = `800 30px ${DISPLAY}`;
+    const prizeWidth = Math.min(ctx.measureText(prize).width + 64, 820);
+    const prizeGradient = ctx.createLinearGradient(0, cardY + 202, 0, cardY + 254);
+    prizeGradient.addColorStop(0, "#fff3bf");
+    prizeGradient.addColorStop(1, "#ffd166");
+    ctx.fillStyle = prizeGradient;
+    ctx.strokeStyle = "#f5c542";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(cx - prizeWidth / 2, cardY + 202, prizeWidth, 52, 26);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#7a4b00";
+    ctx.fillText(prize, cx, cardY + 230, 780);
+    nameY = cardY + 322;
   }
 
-  // Footer: Timestamp & Verification Badge
-  ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-  ctx.font = "500 18px 'Be Vietnam Pro', sans-serif";
-  const dateStr = payload.dateText || new Date().toLocaleString("vi-VN");
-  ctx.fillText(`Thời gian: ${dateStr} • Bánh xe định mệnh TNTY`, width / 2, 490);
+  // Winner name in a big gradient pill.
+  let size = 80;
+  ctx.font = `800 ${size}px ${DISPLAY}`;
+  while (ctx.measureText(winnerName).width > 800 && size > 34) {
+    size -= 4;
+    ctx.font = `800 ${size}px ${DISPLAY}`;
+  }
+  const textWidth = Math.min(ctx.measureText(winnerName).width, 800);
+  const pillW = textWidth + 120;
+  const pillH = size * 1.36;
+  const pill = ctx.createLinearGradient(cx - pillW / 2, 0, cx + pillW / 2, 0);
+  pill.addColorStop(0, "#e63946");
+  pill.addColorStop(1, "#ff5d73");
+  ctx.save();
+  ctx.shadowColor = "rgba(230,57,70,0.45)";
+  ctx.shadowBlur = 26;
+  ctx.shadowOffsetY = 12;
+  ctx.fillStyle = pill;
+  ctx.beginPath();
+  ctx.roundRect(cx - pillW / 2, nameY - pillH / 2, pillW, pillH, pillH / 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.roundRect(cx - pillW / 2, nameY - pillH / 2, pillW, pillH, pillH / 2);
+  ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(120,0,20,0.35)";
+  ctx.shadowBlur = 6;
+  ctx.shadowOffsetY = 3;
+  ctx.fillText(winnerName, cx, nameY + 2, 800);
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
 
-  ctx.fillStyle = "#38bdf8";
-  ctx.font = "bold 16px 'Lexend', sans-serif";
-  ctx.fillText("🌟 FAIR RANDOM DRAW • VERIFIED WITH CRYPTO RNG 🌟", width / 2, 540);
+  const wheelTitle = String(payload.wheelTitle || "").trim();
+  if (wheelTitle) {
+    ctx.fillStyle = "#7a1f2b";
+    ctx.font = `700 26px ${BODY}`;
+    ctx.fillText(`🎡 ${wheelTitle}`, cx, cardY + cardH - 82, 900);
+  }
+  ctx.fillStyle = "#9b5560";
+  ctx.font = `600 21px ${BODY}`;
+  const dateStr = payload.dateText || new Date().toLocaleString("vi-VN");
+  ctx.fillText(`${dateStr} · Bánh xe định mệnh TNTY`, cx, cardY + cardH - 52);
+  ctx.fillStyle = "#0b7aa8";
+  ctx.font = `800 18px ${BODY}`;
+  ctx.fillText("🔒 QUAY NGẪU NHIÊN CÔNG BẰNG · MÃ HÓA CRYPTO RNG", cx, cardY + cardH - 25);
 }
 
 function downloadWinnerCardPng() {
@@ -5489,6 +5614,7 @@ function bindEvents() {
       if (dom.batchDrawCountOutput) {
         dom.batchDrawCountOutput.value = dom.batchDrawCountInput.value;
       }
+      syncRangeFill(dom.batchDrawCountInput);
     });
   });
 
@@ -5821,6 +5947,7 @@ async function bootstrap() {
   }
 
   audioEngine.setVolume(getState().audio.masterVolume);
+  decorateModals();
   bindEvents();
   setupFloatingSpinObserver();
   window.addEventListener("beforeunload", cleanupRuntimeResources, { once: true });
